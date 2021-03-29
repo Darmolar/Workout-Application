@@ -3,7 +3,7 @@ import * as React from 'react';
 import AppLoading from 'expo-app-loading';
 import * as Font from 'expo-font';
 import { Asset } from 'expo-asset';
-import { FontAwesome } from '@expo/vector-icons';
+import { DefaultTheme as PaperDefaultTheme, Provider as PaperProvider } from 'react-native-paper';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 
 import MyDrawer from './src/navigations/DrawerTab';
@@ -21,6 +21,15 @@ function cacheImages(images) {
 function cacheFonts(fonts) {
     return fonts.map(font => Font.loadAsync(font));
 } 
+
+const theme = {
+  ...PaperDefaultTheme,
+  colors: {
+    ...PaperDefaultTheme.colors,
+    primary: 'tomato',
+    accent: 'yellow',
+  },
+};
 
 export default class App extends React.Component  {
   constructor(){
@@ -61,9 +70,11 @@ export default class App extends React.Component  {
         );
       }
     return (
-      <NavigationContainer theme={DefaultTheme}>
-        <MyDrawer />
-      </NavigationContainer>
+      <PaperProvider theme={theme}>
+        <NavigationContainer theme={DefaultTheme}>
+          <MyDrawer />
+        </NavigationContainer>
+      </PaperProvider>
     );
   }
 }

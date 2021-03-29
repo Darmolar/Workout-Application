@@ -54,8 +54,8 @@ export function DrawerContents({props, navigation}, ){
                                label={"Workouts"}
                                activeTintColor={'#000'}
                                inactiveTintColor={'grey'}
-                               labelStyle={styles.tintText}
-                               onPress={() => console.log('hello')}
+                               labelStyle={styles.tintText} 
+                               onPress={() => navigation.navigate('previewVideo')} 
                                style={styles.tintView}
                             />   
                             <DrawerItem

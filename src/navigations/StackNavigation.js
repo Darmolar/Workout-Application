@@ -15,7 +15,8 @@ import unitOfMeasureScreenfrom from '../settings/unitOfMeasure';
 import workSettingsScreen from '../settings/workSettings';
 import countrySettingsScreen from '../settings/countrySettings';
 
-
+import previewVideoScreen from '../videos';
+import workOutVideoScreen from '../videos/videoWorkOut';
 import SavedScreen from '../saved';
 
 import MyTabs from './TopBarNavs';
@@ -64,6 +65,10 @@ export default function MyStack() {
       
       
       <Stack.Screen name="Saved"  options={{headerShown: false}} component={SavedScreen} /> 
+      
+
+      <Stack.Screen name="previewVideo"  options={{headerShown: false}} component={previewVideoScreen} /> 
+      <Stack.Screen name="workOutVideo"  options={{headerShown: false}} component={workOutVideoScreen} /> 
       
     </Stack.Navigator>
   );
