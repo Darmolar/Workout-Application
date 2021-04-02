@@ -67,4 +67,4 @@ export default function MyTopTabBar({ state, descriptors, navigation, position }
       })}
     </View>
   );
-}
+} 

@@ -13,6 +13,7 @@ import {
         Switch, 
     } from 'react-native-paper'; 
 import Icon from '@expo/vector-icons/Ionicons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
     DrawerContentScrollView,
     DrawerItem
@@ -22,6 +23,12 @@ import {
 export function DrawerContents({props, navigation}, ){
     const [isSwitchOn, setIsSwitchOn] = React.useState(false); 
     
+    const logout = async () => {
+        await AsyncStorage.removeItem('token')
+        await AsyncStorage.removeItem('userDetails') 
+            navigation.navigate('Login'); 
+    }
+
     return (
         <View style={{ flex: 1 }}> 
             <StatusBar style="light" backgroundColor="#243972" />
@@ -44,6 +51,20 @@ export function DrawerContents({props, navigation}, ){
                     </View>
                     <View style={styles.containerBody}>
                         <Drawer.Section>
+                            <DrawerItem
+                               icon={({color, size}) => (
+                                    <Icon 
+                                        name="ios-home" 
+                                        size={size} color={color}
+                                    />
+                               )}  
+                               label={"Home"}
+                               activeTintColor={'#000'}
+                               inactiveTintColor={'grey'}
+                               labelStyle={styles.tintText} 
+                               onPress={() => navigation.navigate('Dashboard')} 
+                               style={styles.tintView}
+                            />  
                             <DrawerItem
                                icon={({color, size}) => (
                                     <Icon 
@@ -83,7 +104,7 @@ export function DrawerContents({props, navigation}, ){
                                activeTintColor={'#000'}
                                inactiveTintColor={'grey'}
                                labelStyle={styles.tintText}
-                               onPress={() => console.log('hello')}
+                               onPress={() =>  navigation.navigate('Activity')}
                                style={styles.tintView}
                             />  
                             {/* <DrawerItem
@@ -126,6 +147,20 @@ export function DrawerContents({props, navigation}, ){
                                inactiveTintColor={'grey'}
                                labelStyle={styles.tintText}
                                onPress={() => navigation.navigate('Settings') }
+                               style={styles.tintView}
+                            />  
+                            <DrawerItem
+                               icon={({color, size}) => (
+                                    <Icon 
+                                        name="exit-outline" 
+                                        size={size} color={color}
+                                    />
+                               )}  
+                               label={"Logout"}
+                               activeTintColor={'#000'}
+                               inactiveTintColor={'grey'}
+                               labelStyle={styles.tintText}
+                               onPress={logout }
                                style={styles.tintView}
                             />  
                         </Drawer.Section>

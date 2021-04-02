@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, Image, Dimensions, TouchableOpacity, TextInput } from 'react-native'; 
 import Icon from '@expo/vector-icons/Ionicons';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -18,6 +18,11 @@ import countrySettingsScreen from '../settings/countrySettings';
 import previewVideoScreen from '../videos';
 import workOutVideoScreen from '../videos/videoWorkOut';
 import SavedScreen from '../saved';
+
+import subSearchCategory from '../subSearch';
+
+
+import ActivityTab from '../activities'
 
 import MyTabs from './TopBarNavs';
 
@@ -41,6 +46,7 @@ const CustomNavigationBar = ({ navigation, previous }) =>{
 }
 
 export default function MyStack() {
+  
   return (
     <Stack.Navigator 
         headerMode={'screen'}
@@ -55,7 +61,8 @@ export default function MyStack() {
  
        
       <Stack.Screen name="Home" component={MyTabs} /> 
-
+      
+      <Stack.Screen name="subSearch" options={{headerShown: false}} component={subSearchCategory} />  
 
       <Stack.Screen name="Settings" options={{headerShown: false}} component={indexScreen} />  
       <Stack.Screen name="aboutYouSettings" options={{headerShown: false}} component={aboutYouScreen} />  
@@ -69,6 +76,9 @@ export default function MyStack() {
 
       <Stack.Screen name="previewVideo"  options={{headerShown: false}} component={previewVideoScreen} /> 
       <Stack.Screen name="workOutVideo"  options={{headerShown: false}} component={workOutVideoScreen} /> 
+      
+      
+      <Stack.Screen name="Activity"  component={ActivityTab} /> 
       
     </Stack.Navigator>
   );

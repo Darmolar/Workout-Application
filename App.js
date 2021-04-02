@@ -5,6 +5,8 @@ import * as Font from 'expo-font';
 import { Asset } from 'expo-asset';
 import { DefaultTheme as PaperDefaultTheme, Provider as PaperProvider } from 'react-native-paper';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
+// import { Provider as ReduceProvider } from 'react-redux';
+// import store from './src/redux/configureStore';
 
 import MyDrawer from './src/navigations/DrawerTab';
 
@@ -70,11 +72,13 @@ export default class App extends React.Component  {
         );
       }
     return (
-      <PaperProvider theme={theme}>
-        <NavigationContainer theme={DefaultTheme}>
-          <MyDrawer />
-        </NavigationContainer>
-      </PaperProvider>
+      // <ReduceProvider store={store}>
+        <PaperProvider theme={theme}>
+          <NavigationContainer theme={DefaultTheme}>
+            <MyDrawer />
+          </NavigationContainer>
+        </PaperProvider>
+      // </ReduceProvider>
     );
   }
 }

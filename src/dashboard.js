@@ -1,9 +1,10 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, Image, Dimensions, TouchableOpacity, TextInput } from 'react-native'; 
+import { StyleSheet, Text, View, Image, Dimensions, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native'; 
 import * as Animatable from 'react-native-animatable';
 import { ScrollView } from 'react-native-gesture-handler';
 import Icon from '@expo/vector-icons/Ionicons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Deck from './components/Deck';
 import Buttons from './components/Button';
 import Card from './components/Cards';
@@ -29,7 +30,55 @@ const DATA = [
 ];
 
 export default class DashboardScreen extends Component {
+  constructor(props){
+    super(props);
+    this.state = {
+      userDetails: {},
+      loading: false
+    } 
+  } 
+  componentDidMount() {
+    this.setState({...this.state, loading: true});
+    this.getData();
+    this.handleRegistration();
+  }
 
+  getData = async () => {
+    var token = await AsyncStorage.getItem('token');
+    var userDetails = await AsyncStorage.getItem('userDetails');
+    console.log(token);
+    if(token !== null && userDetails !== null){
+      this.setState({userDetails: userDetails, token}) 
+    }else{
+      navigation.navigate('Login');
+    }
+    return
+  } 
+
+  handleRegistration = async () => { 
+    try { 
+      this.setState({...this.state, loading: true});
+      fetch(`https://quantumleaptech.org/getFit/api/v1/collection`)
+          .then((response) => response.json())
+          .then(async (json) => {
+              this.setState({...this.state, loading: false}); 
+              if(json.status === true && json.data.length > 0){ 
+                  await AsyncStorage.setItem('collections', JSON.stringify(json.data))  
+                  return true;
+              }else{
+                // console.error(json.message);
+              }
+      })
+      .catch((error) => {
+        this.setState({...this.state, loading: false});
+          console.error(error);
+      });
+    } catch (error) { 
+      this.setState({...this.state, loading: false});
+        console.error('catch error', error);
+    } 
+  }
+  
   renderCard(item){
      return (
       <View key={item.id} style={styles.cardContainer}>
@@ -66,6 +115,13 @@ export default class DashboardScreen extends Component {
   }
 
   render(){ 
+    if(this.state.loading){
+      return (
+          <View style={styles.appLoading}>
+            <ActivityIndicator color="#000" size="large" />
+          </View>
+      )
+    }
     return (
         <View style={styles.container}> 
           <StatusBar style="auto" /> 
@@ -131,6 +187,11 @@ export default class DashboardScreen extends Component {
 }
 
 const styles = StyleSheet.create({
+  appLoading:{
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
   container: {
     flex: 1,
     // backgroundColor: '#fff', 

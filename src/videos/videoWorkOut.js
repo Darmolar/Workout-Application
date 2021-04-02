@@ -52,31 +52,28 @@ export default function workOutVideoScreen ({navigation}){
     }, [currentVideo])
 
     const millisToMinutesAndSeconds = async (data) => {
-        // console.log(data);
-        try {
-            if(data.isLoaded == true){ 
-                var millis = data.positionMillis;
-                var minutes = Math.floor(millis / 60000);
-                var seconds = ((millis % 60000) / 1000).toFixed(0);
-                // console.log(minutes + ":" + (seconds < 10 ? '0' : '') + seconds);
-                setDurationSec(minutes + ":" + (seconds < 10 ? '0' : '') + seconds);
-            }else{
-                // console.log('Waiting for video to load');
-            }
-            if(data.didJustFinish == true){
-                // console.log('Finished');
-                await updateVideoLIst(videoIndex);
-                setvideoIndex(videoIndex + 1);
-                // console.log(videoIndex);
-                // videoIndex != videoFiles.length ? setCurrentVideo(videoFiles[videoIndex].Videourl) : null;
-            }
-        } catch (error) {
-            console.warn(error);
-        }
         
-    }
+        if(data.didJustFinish == true){ 
+            await updateVideoLIst(videoIndex);
+            setvideoIndex(videoIndex + 1); 
+            setDurationSec(0);
+        } 
+        
+        await video.current.getStatusAsync()
+            .then(function(result) { 
+                // console.log(result);
+                if(result.durationMillis && result.positionMillis){   
+                    var millis = result.positionMillis;
+                    var minutes = Math.floor(millis / 60000);
+                    var seconds = ((millis % 60000) / 1000).toFixed(0);
+                    // console.log(minutes + ":" + (seconds < 10 ? '0' : '') + seconds);
+                    setDurationSec(minutes + ":" + (seconds < 10 ? '0' : '') + seconds);
+                }
+            })
+            .catch(failureCallback => console.log(failureCallback)); 
+    } 
 
-    const updateVideoLIst = async (current, ) =>{
+    const updateVideoLIst = async (current, ) =>{ 
         return current != videoFiles.length ? setCurrentVideo(videoFiles[videoIndex + 1].Videourl) : null;
     }
 
@@ -93,7 +90,7 @@ export default function workOutVideoScreen ({navigation}){
              <StatusBar style="dark" />
              <View style={styles.videoPriview}>
                 <View style={styles.control}>
-                    <Text style={styles.durationVideo}> </Text>
+                    <Text style={styles.durationVideo}>{ durationSec} </Text>
                     <Icon name={ pauseVideo ? 'ios-play-outline' : 'ios-pause-outline'} size={28} color="#FFF" onPress={() => setPauseVideo(!pauseVideo)} />
                 </View>
                 <Video
@@ -116,7 +113,7 @@ export default function workOutVideoScreen ({navigation}){
              <View style={styles.videoListCon}>
                  {
                      videoFiles.map((item, index) => (
-                        <TouchableOpacity easing={'linear'} onPress={() => setCurrentVideo(item.Videourl)} style={styles.videoList} key={index}>
+                        <TouchableOpacity easing={'linear'} onPress={() => { setDurationSec(0); setCurrentVideo(item.Videourl) }} style={styles.videoList} key={index}>
                             <Animatable.View animation="slideInRight" style={styles.durationCon}>
                                 <Text style={styles.duration}>{ item.duration }</Text>
                             </Animatable.View>
