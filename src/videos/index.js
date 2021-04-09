@@ -146,14 +146,13 @@ export default function previewVideoScreen ({route, navigation}){
                                     <View style={styles.cardConControl}>
                                         <Icon name="ios-settings-outline" size={24} color="#FFF" />
                                     </View>
-                                    <TouchableOpacity onPress={() => Console.log('There is nothing here yet Thank u.')} style={[styles.cardConControl, { width: 100, height: 100, borderRadius: 100 }]}>
+                                    <TouchableOpacity onPress={() => navigation.navigate('workOutVideo',{ videos: workOutSection.sections }) } style={[styles.cardConControl, { width: 100, height: 100, borderRadius: 100 }]}>
                                         <Icon name="ios-play-outline" size={50} color="#FFF" />
                                     </TouchableOpacity>
                                     <TouchableOpacity style={styles.cardConControl} onPress={() => Speech.speak('There is nothing here yet Thank u.')} >
                                         <Icon name="ios-musical-notes-outline" size={24} color="#FFF" />
                                     </TouchableOpacity>
-                                </Animatable.View>
-                                {/* navigation.navigate('workOutVideo',{ videos: workOutSection.sections }) */}
+                                </Animatable.View> 
                             </View>
                         </View>
                     </ImageBackground>

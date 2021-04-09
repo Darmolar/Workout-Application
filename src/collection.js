@@ -161,7 +161,7 @@ export default class CollectionScreen extends Component{
                                         </View>
                                     :
                                     filteredData.map((item, index) => {  
-                                       return ( 
+                                       return (  
                                         <View style={styles.card} key={index}>
                                             <View style={styles.cardHeader}>
                                                 <Text style={styles.cardHeaderText}>{ item.name}</Text>

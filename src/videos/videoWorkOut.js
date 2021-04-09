@@ -95,6 +95,10 @@ export default function workOutVideoScreen ({route, navigation}){
     } 
 
     const updateVideoLIst = async (current, ) =>{ 
+        console.log(videos.videos[videoIndex + 1].url)
+        // const [assets] = useAssets([ 
+        //     videos.videos[videoIndex + 1].url,                         
+        // ]); 
         return current != videoFiles.length ? setCurrentVideo(videos.videos[videoIndex + 1].url) : null;
     }
 
@@ -136,7 +140,7 @@ export default function workOutVideoScreen ({route, navigation}){
                  {
                      videos.videos != null &&
                      videos.videos.map((item, index) => (
-                        <TouchableOpacity easing={'linear'} onPress={() => { setDurationSec(0); setCurrentVideo(item.Videourl) }} style={styles.videoList} key={index}>
+                        <TouchableOpacity easing={'linear'} onPress={() => { setDurationSec(0); setCurrentVideo(item.url) }} style={styles.videoList} key={index}>
                             <Animatable.View animation="slideInRight" style={styles.durationCon}>
                                 <Text style={styles.duration}>{ item.duration }</Text>
                             </Animatable.View>
