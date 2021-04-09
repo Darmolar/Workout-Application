@@ -115,7 +115,9 @@ const setCurrentViews = async (item) =>{
                         currentVideoList != null &&
                         currentVideoList.map(( item, index ) => {
                            return (
-                            <TouchableOpacity key={index} onPress={() => console.log('Hello') } style={styles.listCon}>
+                            <TouchableOpacity key={index} onPress={() => navigation.navigate('previewVideo', {
+                                                items: item.work_out
+                                            })} style={styles.listCon}>
                                 <View style={styles.listConLeft}>
                                     <ImageBackground style={{ width: '100%', height: '100%', zIndex: -1 }} 
                                     source={{ uri: 'https://quantumleaptech.org/getFit'+item.work_out.image  }}>

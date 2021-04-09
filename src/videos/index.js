@@ -63,7 +63,7 @@ export default function previewVideoScreen ({route, navigation}){
  
     const hardRefresh = async (tokenId) => { 
         setLoading(true);  
-        await fetch(`https://quantumleaptech.org/getFit/api/v1/section/find/1`,{
+        await fetch(`https://quantumleaptech.org/getFit/api/v1/section/find/${workOutSection.id}`,{
                 headers:{
                     Accept: 'application/json',
                     Authorization: `Bearer ${tokenId}` 

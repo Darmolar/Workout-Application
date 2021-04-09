@@ -110,7 +110,9 @@ export default function subCollectionsScreen ({route, navigation}){
                                         item.workouts_details.length > 0 &&
                                         item.workouts_details.map(( item2, index2 ) => { 
                                             return ( 
-                                                <TouchableOpacity key={index2} onPress={() => console.log('Hello') } style={styles.listCon}>
+                                                <TouchableOpacity key={index2} onPress={() => navigation.navigate('previewVideo', {
+                                                    items: item2.work_out
+                                                }) } style={styles.listCon}>
                                                     <View style={styles.listConLeft}>
                                                         <ImageBackground style={{ width: '100%', height: '100%', zIndex: -1 }} 
                                                         source={{ uri: 'https://quantumleaptech.org/getFit'+item2.work_out.image }}>
