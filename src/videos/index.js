@@ -1,45 +1,106 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { Component, useRef, useState, useEffect } from 'react';
-import { StyleSheet, Text, View, Image, ImageBackground, Dimensions, TouchableOpacity, TextInput } from 'react-native'; 
+import { StyleSheet, Text, View, Image, ImageBackground, Dimensions, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native'; 
 import * as Animatable from 'react-native-animatable';
 import { ScrollView } from 'react-native-gesture-handler';
 import Icon from '@expo/vector-icons/Ionicons';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Video, AVPlaybackStatus } from 'expo-av';
 import { List } from 'react-native-paper'; 
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import SnackBar from 'rn-snackbar'
+import * as Speech from 'expo-speech';
 
 const { width, height } = Dimensions.get('window');
 
-export default function previewVideoScreen ({navigation}){ 
+export default function previewVideoScreen ({route, navigation}){ 
     const video = useRef(); 
-    const [expanded, setExpanded] = React.useState(true);
-    const [ workOutPriviews, setworkOutPriviews ] = useState([
-                                                                {
-                                                                    id: 1,
-                                                                    title: "20 Push Ups",
-                                                                    uri: 'https://media.self.com/photos/58d693e3d92aa7631e120f9d/4:3/w_2560%2Cc_limit/GettyImages-486273040.jpg',
-                                                                    preview: false,
-                                                                },
-                                                                {
-                                                                    id: 2,
-                                                                    title: "20 Press Backs",
-                                                                    uri: 'https://images.pexels.com/photos/2294361/pexels-photo-2294361.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500',
-                                                                    preview: false,
-                                                                },
-                                                                {
-                                                                    id: 3,
-                                                                    title: "20 Tommy Lifter",
-                                                                    uri: 'https://media.self.com/photos/58d693e3d92aa7631e120f9d/4:3/w_2560%2Cc_limit/GettyImages-486273040.jpg',
-                                                                    preview: false,
-                                                                }
-                                                            ]);
-
+    const { items } = route.params;
+    const [ token, setToken ] = useState('');
+    const [ userDetails, setUserDetails ] = useState({}); 
+    const [ expanded, setExpanded]  = React.useState(true);
+    const [ loading, setLoading ] = useState(false);
+    const [ workOutSection, setWorkOutSection ] = useState(items);
+    // const [ workOutPriviews, setworkOutPriviews ] = useState([
+    //                                                     {
+    //                                                         id: 1,
+    //                                                         title: "20 Push Ups",
+    //                                                         uri: 'https://media.self.com/photos/58d693e3d92aa7631e120f9d/4:3/w_2560%2Cc_limit/GettyImages-486273040.jpg',
+    //                                                         preview: false,
+    //                                                     },
+    //                                                     {
+    //                                                         id: 2,
+    //                                                         title: "20 Press Backs",
+    //                                                         uri: 'https://images.pexels.com/photos/2294361/pexels-photo-2294361.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500',
+    //                                                         preview: false,
+    //                                                     },
+    //                                                     {
+    //                                                         id: 3,
+    //                                                         title: "20 Tommy Lifter",
+    //                                                         uri: 'https://media.self.com/photos/58d693e3d92aa7631e120f9d/4:3/w_2560%2Cc_limit/GettyImages-486273040.jpg',
+    //                                                         preview: false,
+    //                                                     }
+    //                                                 ]); 
     useEffect(() => {
-        // setworkOutPriviews( )
-    }, [workOutPriviews]); 
+        getUserDetails(); 
+    }, [])
+ 
+    const getUserDetails = async () => {
+         var token = await AsyncStorage.getItem('token');
+         var userDetails = await AsyncStorage.getItem('userDetails'); 
+         setWorkOutSection({ ...workOutSection, sections: null }); 
+         if(token !== null && userDetails !== null){
+             // console.log(token); 
+             setToken(JSON.parse(token)); 
+             hardRefresh(JSON.parse(token));
+             setUserDetails(JSON.parse(userDetails)) 
+             return true;
+         }else{
+             navigation.navigate('Login');
+         }  
+         return false
+    } 
+ 
+    const hardRefresh = async (tokenId) => { 
+        setLoading(true);  
+        await fetch(`https://quantumleaptech.org/getFit/api/v1/section/find/1`,{
+                headers:{
+                    Accept: 'application/json',
+                    Authorization: `Bearer ${tokenId}` 
+                }    
+            })
+            .then((response) => response.json())
+            .then(async (json) => { 
+                if(json.message == "Unauthenticated."){ 
+                    await AsyncStorage.removeItem('token') 
+                    await AsyncStorage.removeItem('userDetails') 
+                        navigation.navigate('Login'); 
+                }   
+                if(json.status === true && json.data.videos.length > 0){   
+                    SnackBar.show('Fetched successfully', { duration: 4000 })  
+                    await setWorkOutSection({ ...workOutSection, sections: json.data }); 
+                    setLoading(false);
+                    return true;
+                }else{ 
+                    setLoading(false);
+                    SnackBar.show(json.message, { duration: 4000  })  
+                }
+            }) 
+            .catch((error) => { 
+                setLoading(false); 
+            }); 
+    }  
 
     const handlePress = () => setExpanded(!expanded);
+
+    if(loading == true){
+        return (
+            <View style={styles.appLoading}>
+                <ActivityIndicator color="#000" size="large" />
+            </View>
+        )
+    }
+
     return (
         <View style={styles.container}>
             <View style={styles.header}>
@@ -55,29 +116,29 @@ export default function previewVideoScreen ({navigation}){
                 </View>
             </View>
             <View style={styles.body}>
-                <ScrollView style={{marginBottom: 70,}}>
+                <ScrollView style={{ marginBottom: 70 }}>
                     <ImageBackground 
                         resizeMode="cover"
-                        source={{ uri: 'https://media.self.com/photos/58d693e3d92aa7631e120f9d/4:3/w_2560%2Cc_limit/GettyImages-486273040.jpg' }} 
+                        source={{ uri: 'https://quantumleaptech.org/getFit'+workOutSection.image }} 
                         style={styles.bgImage}> 
                         <View style={styles.overlay}>
                             <View style={styles.title}>
-                                <Text style={styles.titleText}>Lower-body Burnout</Text>
+                                <Text style={styles.titleText}>{workOutSection.name}</Text>
                             </View>
                             <View style={styles.controlsContainer}>
                                 <Animatable.View animation="slideInDown" easing={'linear'}   style={styles.controlsContainerHead}>
                                     <View style={styles.cardCon}>
-                                        <Text style={styles.infoH1}>27</Text>
+                                        <Text style={styles.infoH1}>{workOutSection.avg_min}</Text>
                                         <Text style={styles.infoH2}>Avg. Minutes</Text>
                                     </View>
                                     <Text style={styles.limitter}>|</Text>
                                     <View style={styles.cardCon}>
-                                        <Text style={styles.infoH1}>Moderate</Text>
+                                        <Text style={styles.infoH1}>{workOutSection.intensity}</Text>
                                         <Text style={styles.infoH2}>Intensity</Text>
                                     </View>
                                     <Text style={styles.limitter}>|</Text>
                                     <View style={styles.cardCon}>
-                                        <Text style={styles.infoH1}>Intermediate</Text>
+                                        <Text style={styles.infoH1}>{workOutSection.level}</Text>
                                         <Text style={styles.infoH2}>Level</Text>
                                     </View>
                                 </Animatable.View>
@@ -85,23 +146,24 @@ export default function previewVideoScreen ({navigation}){
                                     <View style={styles.cardConControl}>
                                         <Icon name="ios-settings-outline" size={24} color="#FFF" />
                                     </View>
-                                    <TouchableOpacity onPress={() => navigation.navigate('workOutVideo')} style={[styles.cardConControl, { width: 100, height: 100, borderRadius: 100 }]}>
+                                    <TouchableOpacity onPress={() => Console.log('There is nothing here yet Thank u.')} style={[styles.cardConControl, { width: 100, height: 100, borderRadius: 100 }]}>
                                         <Icon name="ios-play-outline" size={50} color="#FFF" />
                                     </TouchableOpacity>
-                                    <View style={styles.cardConControl}>
+                                    <TouchableOpacity style={styles.cardConControl} onPress={() => Speech.speak('There is nothing here yet Thank u.')} >
                                         <Icon name="ios-musical-notes-outline" size={24} color="#FFF" />
-                                    </View>
+                                    </TouchableOpacity>
                                 </Animatable.View>
+                                {/* navigation.navigate('workOutVideo',{ videos: workOutSection.sections }) */}
                             </View>
                         </View>
                     </ImageBackground>
                     <View style={styles.middleCard}>
                         <Text style={styles.middleCardH1}>Good for</Text>
-                        <Text  style={styles.middleCardH2}>Full Body Flexibility * Hip Mobility * Posture Shoulder Mobility</Text>
+                        <Text  style={styles.middleCardH2}>{workOutSection.description}</Text>
                     </View>
                     <View style={styles.middleCard}>
                         <Text style={styles.middleCardH1}>Equipments</Text>
-                        <Text  style={styles.middleCardH2}>None</Text>
+                        <Text  style={styles.middleCardH2}>{workOutSection.equipment}</Text>
                     </View>
                     <View style={styles.middleCardImage}>
                         <View style={[styles.imageOverlay, { flex: 1, padding: 40 } ]}>
@@ -120,14 +182,15 @@ export default function previewVideoScreen ({navigation}){
                     </View>
                     <View style={styles.assementList}>
                         {
-                            workOutPriviews.map((item, index) => { 
+                            workOutSection.sections && 
+                            workOutSection.sections.videos.map((item, index) => {  
                                 return (
                                     
                                     <List.Section id={index} key={index}>
                                         <List.Accordion
                                             titleStyle={styles.imageOverlayText}
-                                            title={item.title}
-                                            left={props => <ImageBackground style={{ width: 70, height: 60, zIndex: -1 }} source={{ uri: 'https://media.self.com/photos/58d693e3d92aa7631e120f9d/4:3/w_2560%2Cc_limit/GettyImages-486273040.jpg' }}>
+                                            title={item.name}
+                                            left={props => <ImageBackground style={{ width: 70, height: 60, zIndex: -1 }} source={{ uri: 'https://quantumleaptech.org/getFit'+workOutSection.image }}>
                                                                 <View style={styles.imageOverlay}></View>
                                                             </ImageBackground>}
                                                         >
@@ -136,15 +199,17 @@ export default function previewVideoScreen ({navigation}){
                                                                     ref={video}
                                                                     style={styles.videoPriview}
                                                                     source={{
-                                                                        uri: 'http://techslides.com/demos/sample-videos/small.mp4',
+                                                                        uri: 'https://quantumleaptech.org/getFit'+item.url,
                                                                     }}
                                                                     useNativeControls={false}
-                                                                    resizeMode="contain"
-                                                                    isLooping
+                                                                    resizeMode="cover"
+                                                                    isLooping={false}
+                                                                    usePoster={true}
                                                                     shouldPlay={true}
                                                                     isMuted={true}
                                                                     // onPlaybackStatusUpdate={status => setStatus(() => status)}
-                                                                />}                                                                       
+                                                                />
+                                                            }                                                                       
                                                     title={''} /> 
                                         </List.Accordion> 
                                     </List.Section> 
@@ -159,6 +224,11 @@ export default function previewVideoScreen ({navigation}){
 }
 
 const styles = StyleSheet.create({
+    appLoading:{
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
     container:{
         flex: 1,
     },
@@ -294,7 +364,7 @@ const styles = StyleSheet.create({
     videoPriview:{
         width: width - 20, 
         height: 200,
-        // backgroundColor: 'rgba(0,0,0,0.1)', 
+        backgroundColor: 'rgba(0,0,0,0.2)', 
     },
     middleCard:{
         width,

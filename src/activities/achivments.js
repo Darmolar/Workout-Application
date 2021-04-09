@@ -7,23 +7,28 @@ import Icon from '@expo/vector-icons/Ionicons';
 
 const { width, height } = Dimensions.get('window');
 
-export default class HistoryScreen extends Component{
+export default class AchievementsScreen extends Component{
     render(){ 
         return (
-            <View style={ styles.conatiner }> 
+            <ScrollView style={ styles.conatiner} showsVerticalScrollIndicator={false}> 
                 <View style={styles.header}>
-                    <Text style={styles.counth1}>1</Text>
-                    <Text style={styles.headerTitle}>Total Work outs</Text>
-                    <Text style={styles.counth2}>20</Text>
-                    <Text style={styles.headerTitle}>Total Minutes</Text>
+                    <Text>Latest Achivements</Text>
+                    <ScrollView horizontal={true} >
+                        <View style={styles.cardAchive}>
+                            <Text style={styles.cardAchiveText}>1 Work out</Text>
+                        </View>
+                        <View style={styles.cardAchiveAlt}>
+                            <Text style={styles.cardAchiveTextAlt}>Work Out to earn more Achievements</Text>
+                        </View>
+                    </ScrollView>
                 </View>
                 <View style={styles.body}>
                     <View style={styles.card}>
                         <View style={styles.cardHeader}>
-                            <Text style={styles.cardHeaderText}>Your Activities</Text> 
+                            <Text style={styles.cardHeaderText}>Your Achievements</Text> 
                         </View> 
                     </View>  
-                    <ScrollView style={{ height: height + 1000}} showsVerticalScrollIndicator={false} horizontal={false}>                        
+                    {/* <View style={{ width }} >                        
                         <View style={styles.listCon}>
                             <View style={styles.listConLeft}>
                                 <ImageBackground style={{ width: '100%', height: '100%', zIndex: -1 }} source={{ uri: 'https://media.self.com/photos/58d693e3d92aa7631e120f9d/4:3/w_2560%2Cc_limit/GettyImages-486273040.jpg' }}>
@@ -37,25 +42,22 @@ export default class HistoryScreen extends Component{
                                 <Text style={styles.listConRightH1}>360 Drgrees Stronger</Text>
                                 <Text style={styles.listConRightH2}>Wed 17, 21  3:01</Text>
                             </View>
-                        </View>  
-                   </ScrollView>
+                        </View>   
+                   </View> */}
                 </View>
-            </View>
+            </ScrollView>
         )
     }
 }
 
 const styles = StyleSheet.create({
     conatiner:{
-        flex: 1, 
-        alignItems: 'center',
+        flex: 1,  
     },
     header:{
         width,
-        height: 200,
-        padding: 10,
-        justifyContent: 'center',
-        alignItems: 'center'
+        height: 300, 
+        margin: 20
     },
     counth1:{ 
         fontSize: 70,
@@ -69,6 +71,38 @@ const styles = StyleSheet.create({
         fontSize: 15,
         textTransform: 'capitalize',
         color: 'grey',
+    },
+    cardAchive:{
+        width: width / 2.5,
+        marginTop: 10,
+        height: '95%',
+        backgroundColor: '#000',
+        borderRadius: 15,
+        justifyContent: 'flex-end',
+        padding: 15
+    },
+    cardAchiveText:{
+        color: '#FFF',
+        fontSize: 14,
+    },
+    cardAchiveAlt:{ 
+        width: width / 2,
+        marginTop: 10,
+        height: '95%',
+        backgroundColor: 'rgba(0,0,0,0.1)',
+        marginHorizontal: 5,
+        borderRadius: 15,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 15,
+        marginHorizontal: 5,
+    },
+    cardAchiveTextAlt:{ 
+        color: '#000',
+        fontSize: 25,
+        fontFamily: 'Raleway-ExtraBold', 
+        textAlign: 'center',
+        textTransform: 'capitalize'
     },
     body:{
         marginTop: 10
@@ -157,5 +191,5 @@ const styles = StyleSheet.create({
         opacity: 100,
         fontSize: 15,
         fontFamily: 'Raleway-Regular',
-    }
+    },
 })

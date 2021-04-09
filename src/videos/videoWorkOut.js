@@ -9,7 +9,10 @@ import { Video, AVPlaybackStatus } from 'expo-av';
 import { List } from 'react-native-paper';
 import * as Font from 'expo-font';
 import AppLoading from 'expo-app-loading';
-import { Asset, useAssets } from 'expo-asset';
+import { Asset, useAssets } from 'expo-asset'; 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import SnackBar from 'rn-snackbar'
+
 
 function cacheImages(images) {
     return images.map(image => {
@@ -34,22 +37,40 @@ const videoFiles =  [
                         },
                     ];
 
-export default function workOutVideoScreen ({navigation}){ 
+export default function workOutVideoScreen ({route, navigation}){ 
+    const { videos } = route.params; 
+    const [ token, setToken ] = useState('');
+    const [ userDetails, setUserDetails ] = useState({}); 
     const [ pauseVideo, setPauseVideo ] = useState(false);
     const [ durationSec, setDurationSec ] = useState('');
     const [ isReady, setIsReady ]= useState(false);
     const [ videoIndex, setvideoIndex ] = useState(0);
-    const [ currentVideo, setCurrentVideo ] = useState(videoFiles[videoIndex].Videourl);
+    const [ currentVideo, setCurrentVideo ] = useState(videos.videos[videoIndex].url);
     const video = useRef(); 
+    
     const [assets] = useAssets([ 
-                                'http://techslides.com/demos/sample-videos/small.mp4',
-                                'http://d23dyxeqlo5psv.cloudfront.net/big_buck_bunny.mp4',                        
+                                'http://techslides.com/demos/sample-videos/small.mp4',                         
                             ]);
 
     useEffect(()=>{
+        getUserDetails(); 
         setIsReady(false);
         // setCurrentVideo(); 
     }, [currentVideo])
+  
+    const getUserDetails = async () => {
+         var token = await AsyncStorage.getItem('token');
+         var userDetails = await AsyncStorage.getItem('userDetails');  
+         if(token !== null && userDetails !== null){
+             // console.log(token); 
+             setToken(JSON.parse(token));  
+             setUserDetails(JSON.parse(userDetails)) 
+             return true;
+         }else{
+             navigation.navigate('Login');
+         }  
+         return false
+    }  
 
     const millisToMinutesAndSeconds = async (data) => {
         
@@ -74,7 +95,7 @@ export default function workOutVideoScreen ({navigation}){
     } 
 
     const updateVideoLIst = async (current, ) =>{ 
-        return current != videoFiles.length ? setCurrentVideo(videoFiles[videoIndex + 1].Videourl) : null;
+        return current != videoFiles.length ? setCurrentVideo(videos.videos[videoIndex + 1].url) : null;
     }
 
     if (!assets) {
@@ -97,13 +118,14 @@ export default function workOutVideoScreen ({navigation}){
                         ref={video}
                         style={styles.video}
                         source={{
-                            uri: currentVideo,
+                            uri: 'https://quantumleaptech.org/getFit'+currentVideo,
                         }}
                         useNativeControls={false}
                         resizeMode={Video.RESIZE_MODE_COVER}
                         isLoopin={false} 
+                        usePoster={true}
                         shouldPlay={!pauseVideo}
-                        isMuted={true}
+                        isMuted={false}
                         onPlaybackStatusUpdate={status => millisToMinutesAndSeconds(status) }
                     />
              </View>
@@ -112,13 +134,14 @@ export default function workOutVideoScreen ({navigation}){
              </View>
              <View style={styles.videoListCon}>
                  {
-                     videoFiles.map((item, index) => (
+                     videos.videos != null &&
+                     videos.videos.map((item, index) => (
                         <TouchableOpacity easing={'linear'} onPress={() => { setDurationSec(0); setCurrentVideo(item.Videourl) }} style={styles.videoList} key={index}>
                             <Animatable.View animation="slideInRight" style={styles.durationCon}>
                                 <Text style={styles.duration}>{ item.duration }</Text>
                             </Animatable.View>
                             <Animatable.View  animation="slideInRight" style={styles.titleCon}> 
-                                <Text style={styles.title}>{ item.title }</Text>
+                                <Text style={styles.title}>{ item.name }</Text>
                             </Animatable.View>
                         </TouchableOpacity>
                      ))

@@ -24,9 +24,7 @@
     "android": {
       "package": "com.Fitness.Fitness",
       "versionCode": 1,
-      "permissions": [
-        ""
-      ],
+      "permissions": [ "" ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"

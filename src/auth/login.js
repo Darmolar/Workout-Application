@@ -14,7 +14,7 @@ export default function LoginScreen({navigation}) {
   const [ registerError, setregisterError ] = useState('');
 
   useEffect(() => {
-     getData();
+     getData(); 
   },[])
 
   const getData = async () => {
@@ -24,9 +24,11 @@ export default function LoginScreen({navigation}) {
     if(token !== null && userDetails !== null){
       navigation.navigate('Home', { screen: 'Dashboard' }) 
     } 
+    await AsyncStorage.removeItem('token');
+    await AsyncStorage.removeItem('userDetails');
     return true;
   } 
-
+ 
   const handleIncrement = () =>{
     try { 
       setLoading(true);

@@ -19,8 +19,8 @@ import previewVideoScreen from '../videos';
 import workOutVideoScreen from '../videos/videoWorkOut';
 import SavedScreen from '../saved';
 
-import subSearchCategory from '../subSearch';
-
+import subSearchCategoryScreen from '../subSearch';
+import subCollectionsScreen from '../subCollections';
 
 import ActivityTab from '../activities'
 
@@ -62,8 +62,9 @@ export default function MyStack() {
        
       <Stack.Screen name="Home" component={MyTabs} /> 
       
-      <Stack.Screen name="subSearch" options={{headerShown: false}} component={subSearchCategory} />  
-
+      <Stack.Screen name="subSearch" options={{headerShown: false}} component={subSearchCategoryScreen} />  
+      <Stack.Screen name="subCollection" options={{headerShown: false}} component={subCollectionsScreen} /> 
+      
       <Stack.Screen name="Settings" options={{headerShown: false}} component={indexScreen} />  
       <Stack.Screen name="aboutYouSettings" options={{headerShown: false}} component={aboutYouScreen} />  
       <Stack.Screen name="uniteOfMesaureSettings" options={{headerShown: false}} component={unitOfMeasureScreenfrom} />  

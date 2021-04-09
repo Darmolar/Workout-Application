@@ -1,38 +1,68 @@
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
-import { StyleSheet, Text, View, Image, Dimensions, TouchableOpacity, TextInput, ScrollView  } from 'react-native'; 
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, Image, Dimensions, TouchableOpacity, TextInput, ScrollView, ActivityIndicator  } from 'react-native'; 
 import * as Animatable from 'react-native-animatable';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
-
  
 export default function AuthenticationScreen ({navigation}) { 
-        return (
-            <Animatable.View style={styles.container} >
-                <Animatable.View style={{ ...StyleSheet.absoluteFill }} >
-                    <Image
-                        source={require('../../assets/bg2.jpg')}
-                        style={{ flex: 1, height: null, width: null, zIndex: -1 }}
-                    />
-                </Animatable.View> 
-                <View style={{ height: height / 3 }} > 
-                    <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                        <Animatable.View animation="slideInDown" easing={'linear'} style={[styles.button, { backgroundColor: 'transparent' }]} >
-                            <Text style={[styles.buttonText, { color: '#FFF' }]}>SIGN IN</Text>
-                        </Animatable.View> 
-                    </TouchableOpacity>
-                    <TouchableOpacity  onPress={() => navigation.navigate('Register')}>
-                        <Animatable.View animation="slideInUp" easing={'linear'} style={[styles.button ]}>
-                            <Text style={styles.buttonText}>SIGN UP</Text>
-                        </Animatable.View>
-                    </TouchableOpacity>
-                </View>
+  const [ loading, setLoading] = useState(false);
+   useEffect(() => {
+     getData();
+  },[])
 
-            </Animatable.View>
-        ); 
+  const getData = async () => {
+    setLoading(true)
+    var token = await AsyncStorage.getItem('token');
+    var userDetails = await AsyncStorage.getItem('userDetails');
+    // console.log(token);
+    if(token !== null && userDetails !== null){
+      navigation.navigate('Home', { screen: 'Dashboard' }) 
+    } else{
+      setLoading(false)
+    }
+    return true;
+  } 
+
+  if(loading == true){
+      return (
+          <View style={styles.appLoading}>
+              <ActivityIndicator color="#000" size="large" />
+          </View>
+      )
+    }
+    return (
+        <Animatable.View style={styles.container} >
+            <Animatable.View style={{ ...StyleSheet.absoluteFill }} >
+                <Image
+                    source={require('../../assets/bg2.jpg')}
+                    style={{ flex: 1, height: null, width: null, zIndex: -1 }}
+                />
+            </Animatable.View> 
+            <View style={{ height: height / 3 }} > 
+                <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                    <Animatable.View animation="slideInDown" easing={'linear'} style={[styles.button, { backgroundColor: 'transparent' }]} >
+                        <Text style={[styles.buttonText, { color: '#FFF' }]}>SIGN IN</Text>
+                    </Animatable.View> 
+                </TouchableOpacity>
+                <TouchableOpacity  onPress={() => navigation.navigate('Register')}>
+                    <Animatable.View animation="slideInUp" easing={'linear'} style={[styles.button ]}>
+                        <Text style={styles.buttonText}>SIGN UP</Text>
+                    </Animatable.View>
+                </TouchableOpacity>
+            </View>
+
+        </Animatable.View>
+    ); 
 }
 
 const styles = StyleSheet.create({
+  appLoading:{
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center'
+  },
   container: {
     flex: 1,
     backgroundColor: '#fff', 

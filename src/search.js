@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, Image, Dimensions, TouchableOpacity, TextInput, ImageBackground, ActivityIndicator, RefreshControl } from 'react-native'; 
+import { StyleSheet, Text, View, Image, Dimensions, TouchableOpacity, TextInput, ImageBackground, Pressable, ActivityIndicator, RefreshControl, SafeAreaView } from 'react-native'; 
 import * as Animatable from 'react-native-animatable';
 import { ScrollView } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -14,17 +14,17 @@ export default class SearchScreen extends Component{
     constructor(props){
         super(props);
         this.state = {
-          userDetails: {},
+          userDetails: {}, 
           loading: true,
           categories: [],
           search: '',
-          refreshing: false
+          refreshing: false,
+          token: ''
         }
     } 
 
-    componentDidMount() {  
+    async componentDidMount() {    
         this.getData();
-        this.handleCategories();
     }
         
     getData = async () => {
@@ -33,46 +33,62 @@ export default class SearchScreen extends Component{
         // console.log(token);
         if(token !== null && userDetails !== null){
             this.setState({userDetails: JSON.parse(userDetails), token: JSON.parse(token)}) 
+            this.handleCategories(JSON.parse(token));
         }else{
-            navigation.navigate('Login');
+            this.props.navigation.navigate('Login');
         }
         return
     } 
 
-    handleCategories = async () => { 
+    handleCategories = async (tokenId) => { 
         try { 
             this.setState({...this.state, loading: true});
             var categories =  await AsyncStorage.getItem('categories');
-            // console.log(JSON.parse(categories));
             if(categories != null){ 
+                console.log('From Here');
                 this.setState({...this.state, categories: JSON.parse(categories)});  
                 this.setState({...this.state, loading: false});
+                this.hardRefresh();
             }else{ 
                 this.setState({...this.state, loading: true});
-                fetch(`https://quantumleaptech.org/getFit/api/v1/category`)
+                fetch(`https://quantumleaptech.org/getFit/api/v1/category`,{
+                        headers:{
+                            Accept: 'application/json',
+                            Authorization: `Bearer ${tokenId}` 
+                        }    
+                    })
                     .then((response) => response.json())
                     .then(async (json) => {
-                        this.setState({...this.state, loading: false}); 
+                        // console.log(json);
+                        if(json.message == "Unauthenticated."){ 
+                            await AsyncStorage.removeItem('token') 
+                            await AsyncStorage.removeItem('userDetails') 
+                            this.props.navigation.navigate('Login');
+                            return true; 
+                        }
                         if(json.status === true && json.data.data.length > 0){ 
                             this.setState({...this.state, categories: json.data}); 
-                            // console.log(this.state.categories)
+                            // console.log(this.state.categories) 
                             await AsyncStorage.setItem('categories', JSON.stringify(json.data)); 
+                            this.setState({...this.state, loading: false}); 
                             return true;
-                        }else{
-                            console.log(json.message);
+                        }else{  
+                            SnackBar.show(json.message, { duration: 4000 });
+                            this.setState({...this.state, loading: false}); 
                         }
                     }) 
                     .catch((error) => {
                         this.setState({...this.state, loading: false});
-                        console.error(error);
+                        // console.error(error);
                     });
             }
         } catch (error) {  
-            console.error('catch error', error);
+            // console.error('catch error', error);
         }         
     } 
 
     hardRefresh = async () => {
+        await AsyncStorage.removeItem('categories'); 
         // SnackBar.show('Making the world happier', { duration: 4000 })
         this.setState({...this.state,  refreshing: true});
         fetch(`https://quantumleaptech.org/getFit/api/v1/category`,{
@@ -83,9 +99,15 @@ export default class SearchScreen extends Component{
             })
             .then((response) => response.json())
             .then(async (json) => {
+                console.log(json);
+                if(json.message == "Unauthenticated"){ 
+                    await AsyncStorage.removeItem('token') 
+                    await AsyncStorage.removeItem('userDetails') 
+                        this.props.navigation.navigate('Login'); 
+                }
                 // this.setState({...this.state, loading: false}); 
                 if(json.status === true && json.data.data.length > 0){ 
-                    console.log(json.data.data) ;
+                    console.log(json) ;
                     SnackBar.show('Fetched successfully', { duration: 4000  }) 
                     await AsyncStorage.setItem('categories', JSON.stringify(json.data)); 
                     this.setState({...this.state, categories: json.data, refreshing: false}); 
@@ -97,10 +119,10 @@ export default class SearchScreen extends Component{
             }) 
             .catch((error) => {
                 this.setState({...this.state, refreshing: false });
-                console.error(error);
+                // console.error(error);
             });
     }
-
+ 
     render(){ 
         if(this.state.loading == true){
             return (
@@ -109,9 +131,9 @@ export default class SearchScreen extends Component{
                 </View>
             )
           }else { 
-            const filteredData = this.state.categories.data.filter(createFilter(this.state.search, KEYS_TO_FILTERS))
+            const filteredData =  this.state.categories.length !== 0 ? this.state.categories.data.filter(createFilter(this.state.search, KEYS_TO_FILTERS)) : null;
             return (
-                <View style={ styles.conatiner }>
+                <SafeAreaView style={ styles.conatiner }>
                     <View style={styles.header}>
                         <View style={styles.headerSearchContainer}>
                             <Icon name="ios-search" size={16} color="grey" />
@@ -130,29 +152,39 @@ export default class SearchScreen extends Component{
                                         onRefresh={this.hardRefresh}
                                     />
                                 }
-                                style={{ height: height + 1000}} showsVerticalScrollIndicator={false} horizontal={false}>
+                                style={{ marginBottom: '15%' }}
+                                showsVerticalScrollIndicator={false} 
+                                horizontal={false}
+                            >
                             { 
-                                filteredData.map((item, index) => { 
-                                    console.log(item.image);
-                                   return (
-                                    <TouchableOpacity 
-                                            style={styles.card} 
-                                            key={index} 
-                                            resizeMode='cover' 
-                                            onPress={() => this.props.navigation.navigate('subSearch', {
-                                                                                    subCategories: item
-                                                                                })}>
-                                        <ImageBackground 
-                                            source={{ uri: 'https://media.self.com/photos/58d693e3d92aa7631e120f9d/4:3/w_2560%2Cc_limit/GettyImages-486273040.jpg' }}  style={styles.cardImage}>
-                                            <Text style={styles.cardText}>{ item.name} </Text>  
-                                        </ImageBackground>
-                                    </TouchableOpacity>
-                                   )
-                                })
+                                this.state.categories.length == 0 
+                                ?
+                                    <View style={styles.appLoading}>
+                                        <Icon name="ios-close-sharp" size={24} color="black" />
+                                        <Text style={styles.emptyText}>No data yet</Text>
+                                    </View>
+                                :
+                                    filteredData.reverse().map((item, index) => {  
+                                        return (
+                                            <Pressable 
+                                                    style={styles.card} 
+                                                    key={index}  
+                                                    onPress={() => this.props.navigation.navigate('subSearch', {
+                                                                                            subCategories: item
+                                                                                        })}>
+                                                <ImageBackground 
+                                                    source={{ uri: 'https://quantumleaptech.org/getFit'+item.image }}  style={styles.cardImage}>
+                                                    <View style={styles.overLay}>
+                                                        <Text style={styles.cardText}>{ item.name} </Text> 
+                                                    </View>
+                                                </ImageBackground>
+                                            </Pressable>
+                                        )
+                                    })
                             }                             
                         </ScrollView>
                     </View>
-                </View>
+                </SafeAreaView>
             )
           }
     }
@@ -196,17 +228,26 @@ const styles = StyleSheet.create({
     card:{ 
         width,
         height: 200, 
-        marginVertical: 2, 
+        marginVertical: 5,  
+        zIndex: 1
     },
     cardImage:{
+        flex: 1,  
+    },
+    overLay:{
         flex: 1,
         justifyContent: 'center', 
-        backgroundColor: 'rgba(0,0,0,0.03)'
+        backgroundColor: 'rgba(0,0,0,0.3)'
     },
     cardText:{
         fontSize: 16,
         fontFamily: 'Raleway-Bold',
         color: '#FFF',  
         left: '10%',
+    },
+    emptyText:{ 
+        fontSize: 16,
+        fontFamily: 'Raleway-SemiBold',
+        color: '#000',  
     }
 })

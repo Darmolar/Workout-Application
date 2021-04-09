@@ -46,11 +46,11 @@ export default class DashboardScreen extends Component {
   getData = async () => {
     var token = await AsyncStorage.getItem('token');
     var userDetails = await AsyncStorage.getItem('userDetails');
-    console.log(token);
+    // console.log(token);
     if(token !== null && userDetails !== null){
       this.setState({userDetails: userDetails, token}) 
     }else{
-      navigation.navigate('Login');
+      this.props.navigation.navigate('Login');
     }
     return
   } 
@@ -71,33 +71,33 @@ export default class DashboardScreen extends Component {
       })
       .catch((error) => {
         this.setState({...this.state, loading: false});
-          console.error(error);
+          // console.error(error);
       });
     } catch (error) { 
       this.setState({...this.state, loading: false});
-        console.error('catch error', error);
+        // console.error('catch error', error);
     } 
   }
   
   renderCard(item){
      return (
       <View key={item.id} style={styles.cardContainer}>
-        <View style={styles.card}>
-          <View style={{ paddingHorizontal: 30, }}>
-            <Text style={styles.title}>{item.title}</Text>
-            <Icon 
-                name="ios-remove"
-                size={40}
-                color={'black'}
-                style={{marginTop: 25}}
-                />
-            <Text style={styles.number}>{item.number}</Text>
+          <View style={styles.card}>
+            <View style={{ paddingHorizontal: 30, }}>
+              <Text style={styles.title}>{item.title}</Text>
+              <Icon 
+                  name="ios-remove"
+                  size={40}
+                  color={'black'}
+                  style={{marginTop: 25}}
+                  />
+              <Text style={styles.number}>{item.number}</Text>
+            </View>
           </View>
-        </View>
-        <View style={{ alignItems: 'flex-end', right: 10, justifyContent: 'center' }}> 
-          <Text style={styles.metricText}>Metrics</Text>
-        </View>
-    </View>
+          <View style={{ alignItems: 'flex-end', right: 10, justifyContent: 'center' }}> 
+            <Text style={styles.metricText}>Metrics</Text>
+          </View>
+      </View>
      )
   } 
 
@@ -121,27 +121,10 @@ export default class DashboardScreen extends Component {
             <ActivityIndicator color="#000" size="large" />
           </View>
       )
-    }
+    } 
     return (
         <View style={styles.container}> 
           <StatusBar style="auto" /> 
-          {/* <View style={styles.col}> 
-            <View>
-              <Icon name="md-remove" color='#000' size={26}  />  
-              <Icon name="md-remove" color='#000' size={26} style={styles.minusIcon} />  
-            </View>
-            <View style={styles.avartarContainer}>
-              <Image
-                  source={require('../assets/icon.png')}
-                  style={styles.avatar}
-              />
-            </View>
-          </View>  */}
-          {/* <View style={styles.colContainer}>
-              <Text style={styles.textGLobal}>GLOBAL</Text>
-              <Text style={styles.textGLobal}>GLOBAL</Text>
-              <Icon name="md-refresh" size={24} color="black" />
-          </View> */}
           <Deck 
               data={DATA}
               renderCard={this.renderCard}

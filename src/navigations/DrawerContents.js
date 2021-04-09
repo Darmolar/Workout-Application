@@ -50,21 +50,7 @@ export function DrawerContents({props, navigation}, ){
                         </View>
                     </View>
                     <View style={styles.containerBody}>
-                        <Drawer.Section>
-                            <DrawerItem
-                               icon={({color, size}) => (
-                                    <Icon 
-                                        name="ios-home" 
-                                        size={size} color={color}
-                                    />
-                               )}  
-                               label={"Home"}
-                               activeTintColor={'#000'}
-                               inactiveTintColor={'grey'}
-                               labelStyle={styles.tintText} 
-                               onPress={() => navigation.navigate('Dashboard')} 
-                               style={styles.tintView}
-                            />  
+                        <Drawer.Section> 
                             <DrawerItem
                                icon={({color, size}) => (
                                     <Icon 
@@ -76,7 +62,7 @@ export function DrawerContents({props, navigation}, ){
                                activeTintColor={'#000'}
                                inactiveTintColor={'grey'}
                                labelStyle={styles.tintText} 
-                               onPress={() => navigation.navigate('previewVideo')} 
+                               onPress={() => navigation.navigate('Dashboard')} 
                                style={styles.tintView}
                             />   
                             <DrawerItem

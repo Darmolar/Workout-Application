@@ -1,22 +1,23 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useState, useEffect, Component } from 'react';
-import { StyleSheet, Text, View, Image, Dimensions, TouchableOpacity, TextInput, ImageBackground, ActivityIndicator } from 'react-native'; 
+import { StyleSheet, Text, View, Image, Dimensions, TouchableOpacity, TextInput, ImageBackground, ActivityIndicator, SafeAreaView } from 'react-native'; 
 import * as Animatable from 'react-native-animatable';
 import { ScrollView } from 'react-native-gesture-handler';
 import Icon from '@expo/vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SnackBar from 'rn-snackbar'
-
+ 
 
 const { width, height } = Dimensions.get('window');
  
-export default function subSearchCategory ({route, navigation}){ 
+export default function subSearchCategoryScreen ({route, navigation}){ 
     const { subCategories } = route.params;
     const [ token, setToken ] = useState('');
     const [ userDetails, setUserDetails ] = useState({}); 
-    const [ subCats, setSubCats ] = useState([]);
+    const [ subCats, setSubCats ] = useState(subCategories.sub_category);
     const [ loading, setLoading ] = useState(false);
-
+    const [ currentVideoList, setcurrentVideoList ] = useState([]);
+    // console.log('log', subCategories)
     useEffect(() => {
        getUserDetails(); 
     },[])
@@ -39,7 +40,7 @@ export default function subSearchCategory ({route, navigation}){
 
     const hardRefresh = async (tokenId) => { 
         setLoading(true);  
-        await fetch(`https://quantumleaptech.org/getFit/api/v1/sub_category/find/${subCategories.id}`,{
+        await fetch(`https://quantumleaptech.org/getFit/api/v1/category/workout/${subCategories.id}`,{
                 headers:{
                     Accept: 'application/json',
                     Authorization: `Bearer ${tokenId}` 
@@ -52,11 +53,13 @@ export default function subSearchCategory ({route, navigation}){
                     await AsyncStorage.removeItem('userDetails') 
                         navigation.navigate('Login'); 
                 }
-                // this.setState({...this.state, loading: false}); 
+                console.log(json.data);
+                setLoading(false); 
                 if(json.status === true && json.data.data.length > 0){  
-                    console.log(json.data);
+                    // console.log(json.data);
                     SnackBar.show('Fetched successfully', { duration: 4000 })  
                     setSubCats(json.data.data); 
+                    setCurrentViews(json.data.data[0]);
                     setLoading(false);
                     return true;
                 }else{ 
@@ -66,9 +69,14 @@ export default function subSearchCategory ({route, navigation}){
             }) 
             .catch((error) => { 
                 setLoading(false);
-                console.error(error);
+                // console.error(error);
             }); 
     } 
+
+const setCurrentViews = async (item) =>{
+    console.log('currenView', item)
+    setcurrentVideoList(item.workouts_details)
+}
 
     if(loading == true){
         return (
@@ -77,10 +85,9 @@ export default function subSearchCategory ({route, navigation}){
             </View>
         )
     }
-
     
     return (
-        <View style={ styles.conatiner }> 
+        <SafeAreaView style={ styles.conatiner }> 
                 <View style={styles.header}>
                 <View style={styles.headerContainer}>
                     <Icon name="ios-return-up-back" size={30} color="black" onPress={() => navigation.goBack()} />
@@ -90,9 +97,10 @@ export default function subSearchCategory ({route, navigation}){
             <View style={styles.middle}>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     {
-                        subCats.map((item, index) => {
+                        subCats.length > 0 &&
+                        subCats.map((item, index) => {                            
                             return (
-                                <TouchableOpacity style={styles.middleButton}>
+                                <TouchableOpacity onPress={() => setCurrentViews(subCats[index])} key={index} style={styles.middleButton}>
                                     <Text style={styles.middleButtonText}>{ item.name }</Text>
                                 </TouchableOpacity>
                             )
@@ -101,25 +109,33 @@ export default function subSearchCategory ({route, navigation}){
                 </ScrollView>
             </View>
             <View style={styles.body}>
-                <ScrollView style={{ padding: 10,height: height + 1000}} showsVerticalScrollIndicator={false} horizontal={false}>                                       
-                    <TouchableOpacity onPress={() => navigation.navigate('previewVideo') } style={styles.listCon}>
-                        <View style={styles.listConLeft}>
-                            <ImageBackground style={{ width: '100%', height: '100%', zIndex: -1 }} 
-                            source={{ uri: 'https://media.self.com/photos/58d693e3d92aa7631e120f9d/4:3/w_2560%2Cc_limit/GettyImages-486273040.jpg' }}>
-                                <View style={styles.imageOverlay}>
-                                    <Text style={styles.imageOverlayText}>30</Text>
-                                    <Text style={styles.imageOverlayText}>Min</Text>
+                <ScrollView style={{ padding: 10,height: height + 1000}} showsVerticalScrollIndicator={false} horizontal={false}>   
+                    <Text style={{marginVertical: 5, color: 'grey', fontSize: 14, fontFamily: 'Raleway-Regular' }}>{currentVideoList.length} Workout</Text>                                    
+                    {
+                        currentVideoList != null &&
+                        currentVideoList.map(( item, index ) => {
+                           return (
+                            <TouchableOpacity key={index} onPress={() => console.log('Hello') } style={styles.listCon}>
+                                <View style={styles.listConLeft}>
+                                    <ImageBackground style={{ width: '100%', height: '100%', zIndex: -1 }} 
+                                    source={{ uri: 'https://quantumleaptech.org/getFit'+item.work_out.image  }}>
+                                        <View style={styles.imageOverlay}>
+                                            <Text style={styles.imageOverlayText}>{ item.work_out.avg_min }</Text>
+                                            {/* <Text style={styles.imageOverlayText}>Min</Text> */}
+                                        </View>
+                                    </ImageBackground>
                                 </View>
-                            </ImageBackground>
-                        </View>
-                        <View style={styles.listConRight}>
-                            <Text style={styles.listConRightH1}>360 Drgrees Stronger </Text>
-                            <Text style={styles.listConRightH2}>Intermediate - Basic Equipments - Strength</Text>
-                        </View>
-                    </TouchableOpacity>  
+                                <View style={styles.listConRight}>
+                                    <Text style={styles.listConRightH1}>{ item.work_out.name } </Text>
+                                    <Text style={styles.listConRightH2}>{ item.work_out.intensity }  { item.work_out.equipment }  { item.work_out.level }</Text>
+                                </View>
+                            </TouchableOpacity>
+                           )
+                        }) 
+                    } 
                 </ScrollView>
             </View>
-        </View>
+        </SafeAreaView>
     ) 
 }
 
@@ -173,7 +189,7 @@ const styles = StyleSheet.create({
     listCon:{        
         width: '100%',
         // padding: 10,
-        height: 130,
+        height: 100,
         flexDirection: 'row', 
     },
     listConLeft:{
@@ -197,17 +213,17 @@ const styles = StyleSheet.create({
     },  
     listConRight:{ 
         width: '70%',
-        height: '100%',
-        justifyContent: 'space-evenly',
+        height: '100%', 
         padding: 10,
     },
     listConRightH1:{
         color: '#000',
-        fontFamily: 'Raleway-Bold',
+        fontFamily: 'Raleway-SemiBold',
         textTransform: 'capitalize',
         fontSize: 20,
     },
     listConRightH2:{ 
+        top: 10,
         color: '#000',
         opacity: 100,
         fontSize: 15,
