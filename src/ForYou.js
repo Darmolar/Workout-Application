@@ -26,12 +26,17 @@ export default class ForYouScreen extends Component{
     async componentDidMount() {    
         await AsyncStorage.removeItem('workOuts');
         this.getData();
+        this.props.navigation.addListener('focus', () => {
+            this.hardRefresh();
+          });
     }
         
     getData = async () => {
+        await AsyncStorage.removeItem('savedWorkouts');  
         var token = await AsyncStorage.getItem('token');
-        var userDetails = await AsyncStorage.getItem('userDetails');
-        // console.log(token);
+        var userDetails = await AsyncStorage.getItem('userDetails'); 
+        var savedWorkouts = await AsyncStorage.getItem('savedWorkouts');
+        console.log('savedWorkouts', JSON.parse(savedWorkouts));
         if(token !== null && userDetails !== null){
             this.setState({userDetails: JSON.parse(userDetails), token: JSON.parse(token)}) 
             this.handleWorkOuts(JSON.parse(token));
@@ -127,6 +132,23 @@ export default class ForYouScreen extends Component{
             });
     }
 
+    saveWorkOut = async (id) => {
+        var savedWorkouts = await AsyncStorage.getItem('savedWorkouts');
+        if(savedWorkouts !== null){
+            var alreadySavedWorkOut = JSON.parse(savedWorkouts);
+            alreadySavedWorkOut[id] = id;
+            // console.log(alreadySavedWorkOut)
+            await AsyncStorage.setItem('savedWorkouts', JSON.stringify(alreadySavedWorkOut));
+            SnackBar.show('Saved successfully', { duration: 4000 }) 
+        }else{
+            var newSavedWorkOut = new Object();
+            newSavedWorkOut[id] = id;
+            await AsyncStorage.setItem('savedWorkouts', JSON.stringify(newSavedWorkOut));
+            SnackBar.show('Saved successfully', { duration: 4000 }) 
+        }
+        return true;
+    }
+
     render(){ 
         
         if(this.state.loading == true){
@@ -178,7 +200,7 @@ export default class ForYouScreen extends Component{
                                                             <ImageBackground 
                                                                 source={{ uri: 'https://quantumleaptech.org/getFit'+item.image }}  style={styles.cardImage}>
                                                                 <View style={styles.cardText}>
-                                                                    <Icon name="ios-cloud-download-outline" color="black" size={20} />
+                                                                    <Icon name="ios-cloud-download-outline" color="black" size={20} onPress={() => this.saveWorkOut(item.id) } />
                                                                 </View>
                                                             </ImageBackground>
                                                             <View >

@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { Component, useRef, useState, useEffect } from 'react';
-import { StyleSheet, Text, View, Image, ImageBackground, Dimensions, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native'; 
+import { StyleSheet, Text, View, Image, ImageBackground, Dimensions, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native'; 
 import * as Animatable from 'react-native-animatable';
 import { ScrollView } from 'react-native-gesture-handler';
 import Icon from '@expo/vector-icons/Ionicons';
@@ -12,7 +12,7 @@ import AppLoading from 'expo-app-loading';
 import { Asset, useAssets } from 'expo-asset'; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SnackBar from 'rn-snackbar'
-
+import * as Speech from 'expo-speech';
 
 function cacheImages(images) {
     return images.map(image => {
@@ -23,57 +23,93 @@ function cacheImages(images) {
         }
     });
 }
+const speach = `Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin  
+                generators on the Internet tend to repeat predefined chunks as necessary, making this the first true generator on the Internet. 
+                It uses a dictionary of over 200 Latin words, combined with a handful of model sentence structures, to generate Lorem Ipsum which 
+                looks reasonable. The generated Lorem Ipsum is therefore always free from repetition, injected humour, or non-characteristic words etc.`;
+
 const { width, height } = Dimensions.get('window')
-const videoFiles =  [
-                        {
-                            title: 'Pull Up',
-                            duration: '4:00',
-                            Videourl: 'http://techslides.com/demos/sample-videos/small.mp4',
-                        }, 
-                        {
-                            title: 'Press Down',
-                            duration: '1:00',
-                            Videourl: 'http://d23dyxeqlo5psv.cloudfront.net/big_buck_bunny.mp4',
-                        },
-                    ];
 
 export default function workOutVideoScreen ({route, navigation}){ 
     const { videos } = route.params; 
     const [ token, setToken ] = useState('');
     const [ userDetails, setUserDetails ] = useState({}); 
+    const [ useMUsic, setUseMusic ] = useState(true);
     const [ pauseVideo, setPauseVideo ] = useState(false);
     const [ durationSec, setDurationSec ] = useState('');
-    const [ isReady, setIsReady ]= useState(false);
+    const [ isReady, setIsReady ]= useState(true);
     const [ videoIndex, setvideoIndex ] = useState(0);
     const [ currentVideo, setCurrentVideo ] = useState(videos.videos[videoIndex].url);
-    const video = useRef(); 
-    
-    const [assets] = useAssets([ 
-                                'http://techslides.com/demos/sample-videos/small.mp4',                         
-                            ]);
+    const video = useRef();  
+    const myVideos = [];
+    videos.videos.forEach((element, index) => {
+        myVideos[index] = 'https://quantumleaptech.org/getFit'+element.url;
+    });
 
-    useEffect(()=>{
+    const [assets] = useAssets(myVideos);
+
+    // console.log(myVideos);
+    useEffect(() => {
+        navigation.addListener('beforeRemove', (e) => {
+            // if (!hasUnsavedChanges) {
+            //   // If we don't have unsaved changes, then we don't need to do anything
+            //   return;
+            // }
+    
+            // Prevent default behavior of leaving the screen
+            e.preventDefault();
+    
+            // Prompt the user before leaving the screen
+            Alert.alert(
+              'Leave Workout?',
+              'Are you sure to discard them and leave?',
+              [
+                { text: "Don't leave", style: 'cancel', onPress: () => {} },
+                {
+                  text: 'Discard',
+                  style: 'destructive',
+                  // If the user confirmed, then we dispatch the action we blocked earlier
+                  // This will continue the action that had triggered the removal of the screen
+                  onPress: () => { Speech.isSpeakingAsync() ? Speech.stop() : null; navigation.dispatch(e.data.action)}
+                },
+              ]
+            );
+          }),
         getUserDetails(); 
-        setIsReady(false);
-        // setCurrentVideo(); 
-    }, [currentVideo])
+    }, [])
   
     const getUserDetails = async () => {
-         var token = await AsyncStorage.getItem('token');
-         var userDetails = await AsyncStorage.getItem('userDetails');  
-         if(token !== null && userDetails !== null){
-             // console.log(token); 
-             setToken(JSON.parse(token));  
-             setUserDetails(JSON.parse(userDetails)) 
-             return true;
-         }else{
-             navigation.navigate('Login');
-         }  
-         return false
+        setIsReady(false);  
+        setPauseVideo(false)
+        var token = await AsyncStorage.getItem('token');
+        var userDetails = await AsyncStorage.getItem('userDetails');  
+        if(token !== null && userDetails !== null){ 
+            setToken(JSON.parse(token));  
+            setUserDetails(JSON.parse(userDetails));                
+            const playMusicValue = await AsyncStorage.getItem('playMusic');  
+            if(playMusicValue != null){ 
+                updateCurrentVideo(JSON.parse(playMusicValue).playMusic);
+            } else{
+                updateCurrentVideo(false);
+            } 
+        }else{
+            navigation.navigate('Login');
+        }  
+        return false;
     }  
 
-    const millisToMinutesAndSeconds = async (data) => {
-        
+    const updateCurrentVideo = async (canPlayMusic) => { 
+        console.log(canPlayMusic)
+        setUseMusic(canPlayMusic); 
+        if(canPlayMusic == false){
+            console.log('why using me', useMUsic)
+            Speech.speak(speach); 
+        }
+        setIsReady(true); 
+        return true;
+    }
+
+    const millisToMinutesAndSeconds = async (data) => {        
         if(data.didJustFinish == true){ 
             await updateVideoLIst(videoIndex);
             setvideoIndex(videoIndex + 1); 
@@ -94,12 +130,23 @@ export default function workOutVideoScreen ({route, navigation}){
             .catch(failureCallback => console.log(failureCallback)); 
     } 
 
-    const updateVideoLIst = async (current, ) =>{ 
-        console.log(videos.videos[videoIndex + 1].url)
-        // const [assets] = useAssets([ 
-        //     videos.videos[videoIndex + 1].url,                         
-        // ]); 
-        return current != videoFiles.length ? setCurrentVideo(videos.videos[videoIndex + 1].url) : null;
+    const updatePauseVideo = async (value) => {
+        setPauseVideo(value); 
+        if(useMUsic == false){
+            value == true ? 
+                Speech.pause()
+            :
+                Speech.resume()
+            ;
+        }
+    }
+
+    const updateVideoLIst = async (current ) =>{  
+        if(!(useMUsic)){
+            console.log('why using me nowwww', useMUsic)
+            Speech.speak(speach); 
+        }
+        return current != videos.videos.length ? setCurrentVideo(videos.videos[videoIndex + 1].url) : null;
     }
 
     if (!assets) {
@@ -115,26 +162,26 @@ export default function workOutVideoScreen ({route, navigation}){
              <StatusBar style="dark" />
              <View style={styles.videoPriview}>
                 <View style={styles.control}>
-                    <Text style={styles.durationVideo}>{ durationSec} </Text>
-                    <Icon name={ pauseVideo ? 'ios-play-outline' : 'ios-pause-outline'} size={28} color="#FFF" onPress={() => setPauseVideo(!pauseVideo)} />
+                    <Text style={styles.durationVideo}>{ durationSec }</Text>
+                    <Icon name={ pauseVideo ? 'ios-play-outline' : 'ios-pause-outline'} size={28} color="#FFF" onPress={() => updatePauseVideo(pauseVideo == true ? false : true) } />
                 </View>
                 <Video
-                        ref={video}
-                        style={styles.video}
-                        source={{
-                            uri: 'https://quantumleaptech.org/getFit'+currentVideo,
-                        }}
-                        useNativeControls={false}
-                        resizeMode={Video.RESIZE_MODE_COVER}
-                        isLoopin={false} 
-                        usePoster={true}
-                        shouldPlay={!pauseVideo}
-                        isMuted={false}
-                        onPlaybackStatusUpdate={status => millisToMinutesAndSeconds(status) }
-                    />
+                    ref={video}
+                    style={styles.video}
+                    source={{
+                        uri: 'https://quantumleaptech.org/getFit'+currentVideo
+                    }}
+                    useNativeControls={false}
+                    resizeMode={Video.RESIZE_MODE_COVER}
+                    isLoopin={false} 
+                    usePoster={true}
+                    shouldPlay={!pauseVideo}
+                    isMuted={!useMUsic}
+                    onPlaybackStatusUpdate={status => millisToMinutesAndSeconds(status) }
+                />
              </View>
              <View style={{ width, padding: 10, justifyContent: 'center' }}>
-                 <Text style={{ color: 'grey', fontSize: 16, fontFamily: 'Raleway-Regular' }}>Mobility</Text>
+                 <Text style={{ color: 'grey', fontSize: 16, fontFamily: 'Raleway-SemiBold' }}>Mobility</Text>
              </View>
              <View style={styles.videoListCon}>
                  {
@@ -144,14 +191,13 @@ export default function workOutVideoScreen ({route, navigation}){
                             <Animatable.View animation="slideInRight" style={styles.durationCon}>
                                 <Text style={styles.duration}>{ item.duration }</Text>
                             </Animatable.View>
-                            <Animatable.View  animation="slideInRight" style={styles.titleCon}> 
+                            <Animatable.View animation="slideInRight" style={styles.titleCon}> 
                                 <Text style={styles.title}>{ item.name }</Text>
                             </Animatable.View>
                         </TouchableOpacity>
                      ))
                  } 
              </View>
-
         </View>
     )
 }

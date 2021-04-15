@@ -27,6 +27,9 @@ export default class CollectionScreen extends Component{
     async componentDidMount() {   
         this.setState({...this.state, loading: true});
         this.getData(); 
+        this.props.navigation.addListener('focus', () => {
+            this.hardRefresh();
+          });
     }
         
     getData = async (tokenId) => {
@@ -35,7 +38,8 @@ export default class CollectionScreen extends Component{
         if(token !== null && userDetails !== null){
             this.setState({userDetails: JSON.parse(userDetails), token: JSON.parse(token)}) 
             this.handleColections(JSON.parse(token));
-            console.log(JSON.parse(token));
+            // console.log(JSON.parse(token));
+            this.hardRefresh();
         }else{
             this.props.navigation.navigate('Login');
         }
@@ -44,13 +48,13 @@ export default class CollectionScreen extends Component{
  
     handleColections = async (tokenId) => { 
         try { 
-            var collection =  await AsyncStorage.getItem('collections');
-            if(collection != null){
-                this.setState({...this.state, collection: JSON.parse(collection)}); 
-                this.setState({...this.state, loading: false});
-                this.hardRefresh();
-                // console.log('collection', this.state.collection) 
-            }else{ 
+            // var collection =  await AsyncStorage.getItem('collections');
+            // if(collection != null){
+            //     this.setState({...this.state, collection: JSON.parse(collection)}); 
+            //     this.setState({...this.state, loading: false});
+                
+            //     // console.log('collection', this.state.collection) 
+            // }else{ 
                 this.setState({...this.state, loading: true});
                 fetch(`https://quantumleaptech.org/getFit/api/v1/collection`,{
                             headers:{
@@ -65,7 +69,7 @@ export default class CollectionScreen extends Component{
                             await AsyncStorage.removeItem('userDetails') 
                             this.props.navigation.navigate('Login'); 
                         }
-                        console.log('collection', json.data) 
+                        // console.log('collection', json.data) 
                         if(json.status === true && json.data.data.length > 0){ 
                             this.setState({...this.state, collection: json.data}); 
                             await AsyncStorage.setItem('collections', JSON.stringify(json.data)); 
@@ -80,7 +84,7 @@ export default class CollectionScreen extends Component{
                         this.setState({...this.state, loading: false});
                         // console.error(error);
                     });
-            }
+            // }
         } catch (error) { 
             this.setState({...this.state, loading: false});
             console.error('catch error', error);
@@ -103,7 +107,7 @@ export default class CollectionScreen extends Component{
                     await AsyncStorage.removeItem('userDetails') 
                     this.props.navigation.navigate('Login'); 
                 }
-                console.log('collection', json.data) 
+                // console.log('collection', json.data) 
                 if(json.status === true && json.data.data.length > 0){ 
                     this.setState({...this.state, collection: json.data}); 
                     await AsyncStorage.setItem('collections', JSON.stringify(json.data)); 

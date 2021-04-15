@@ -25,6 +25,9 @@ export default class SearchScreen extends Component{
 
     async componentDidMount() {    
         this.getData();
+        this.props.navigation.addListener('focus', () => {
+            this.hardRefresh();
+          });
     }
         
     getData = async () => {

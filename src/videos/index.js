@@ -10,7 +10,7 @@ import { List } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SnackBar from 'rn-snackbar'
 import * as Speech from 'expo-speech';
-
+ 
 const { width, height } = Dimensions.get('window');
 
 export default function previewVideoScreen ({route, navigation}){ 
@@ -146,7 +146,7 @@ export default function previewVideoScreen ({route, navigation}){
                                     <View style={styles.cardConControl}>
                                         <Icon name="ios-settings-outline" size={24} color="#FFF" />
                                     </View>
-                                    <TouchableOpacity onPress={() => navigation.navigate('workOutVideo',{ videos: workOutSection.sections }) } style={[styles.cardConControl, { width: 100, height: 100, borderRadius: 100 }]}>
+                                    <TouchableOpacity disabled={workOutSection.sections == null || workOutSection.sections.videos.length == 0} onPress={() =>  navigation.navigate('workOutVideo',{ videos: workOutSection.sections }) } style={[styles.cardConControl, { width: 100, height: 100, borderRadius: 100 }]}>
                                         <Icon name="ios-play-outline" size={50} color="#FFF" />
                                     </TouchableOpacity>
                                     <TouchableOpacity style={styles.cardConControl} onPress={() => Speech.speak('There is nothing here yet Thank u.')} >
