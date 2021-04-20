@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import React from "react";  
+import React, {useState , useEffect} from "react";  
 import { useWindowDimensions, StyleSheet, View, TextInput, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { EvilIcons, Ionicons, AntDesign, Octicons, MaterialCommunityIcons, Feather, MaterialIcons, FontAwesome, Entypo, Fontisto } from '@expo/vector-icons';   
 import { 
@@ -22,12 +22,35 @@ import {
 
 export function DrawerContents({props, navigation}, ){
     const [isSwitchOn, setIsSwitchOn] = React.useState(false); 
-    
+    const [ token, setToken ] = useState('');
+    const [ userDetails, setUserDetails ] = useState({});  
+    const [ loading, setLoading ] = useState(false);  
+
+    useEffect(() => {
+       getUserDetails(); 
+    },[])
+ 
+    const getUserDetails = async () => {
+        setLoading(true);
+        var token = await AsyncStorage.getItem('token');
+        var userDetails = await AsyncStorage.getItem('userDetails');
+        if(token !== null && userDetails !== null){ 
+            setToken(JSON.parse(token));  
+            var data = JSON.parse(userDetails); 
+            setUserDetails(data);
+             
+            return true;
+        }else{
+            navigation.navigate('Login');
+        }  
+        return false
+    }
+
     const logout = async () => {
         await AsyncStorage.removeItem('token')
         await AsyncStorage.removeItem('userDetails') 
             navigation.navigate('Login'); 
-    }
+    } 
 
     return (
         <View style={{ flex: 1 }}> 
@@ -46,7 +69,7 @@ export function DrawerContents({props, navigation}, ){
                                 size={100}
                                 style={{ borderWidth: 2, borderColor: '#fff', backgroundColor: '#FFF', justifyContent: 'center', alignItems: 'center' }}
                             /> */}
-                            <Text style={styles.title}>John Doe</Text> 
+                            <Text style={styles.title}>{userDetails.first_name } {userDetails.last_name }</Text> 
                         </View>
                     </View>
                     <View style={styles.containerBody}>

@@ -1,14 +1,55 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { Component } from 'react';
-import { StyleSheet, Text, View, Image, ImageBackground, Dimensions, TouchableOpacity, TextInput } from 'react-native'; 
+import React, { useState, useEffect, Component } from 'react';
+import { StyleSheet, Text, View, Image, ImageBackground, Dimensions, TouchableOpacity, TextInput, Pressable, ActivityIndicator } from 'react-native'; 
 import * as Animatable from 'react-native-animatable';
 import { ScrollView } from 'react-native-gesture-handler';
 import Icon from '@expo/vector-icons/Ionicons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import SnackBar from 'rn-snackbar'
 
 const { width, height } = Dimensions.get('window');
 
-export default function SavedScreen ({navigation}){ 
-    return (
+export default function SavedScreen ({navigation}){  
+    const [ token, setToken ] = useState('');
+    const [ userDetails, setUserDetails ] = useState({});  
+    const [ savedWorkouts, setSavedWorkouts ] = useState({});  
+    const [ loading, setLoading ] = useState(false);
+    // console.log('log', subCategories)
+    useEffect(() => {
+       setLoading(true);  
+       getUserDetails(); 
+    },[])
+
+    const getUserDetails = async () => {
+        var token = await AsyncStorage.getItem('token');
+        var userDetails = await AsyncStorage.getItem('userDetails');
+        var savedWorkouts = await AsyncStorage.getItem('savedWorkouts'); 
+        if(token !== null && userDetails !== null){ 
+            setToken(JSON.parse(token));  
+            setUserDetails(JSON.parse(userDetails));
+            if(savedWorkouts !== null){
+                setSavedWorkouts(JSON.parse(savedWorkouts));
+                setLoading(false);  
+            } else{
+                
+                setLoading(false);  
+            }
+            return true;
+        }else{
+            navigation.navigate('Login');
+        }  
+        return false
+    } 
+    
+    if(loading == true){
+        return (
+            <View style={styles.appLoading}>
+                <ActivityIndicator color="#000" size="large" />
+            </View>
+        )
+    }
+    
+    return ( 
         <View style={styles.container}>
             <View style={styles.header}>
                 <View style={styles.headerContainer}>
@@ -18,28 +59,48 @@ export default function SavedScreen ({navigation}){
             </View>
             <View style={styles.body}>
                 <ScrollView style={styles.bodyListContainer}>
-                    <View style={styles.listCon}>
-                        <View style={styles.listConLeft}>
-                            <ImageBackground style={{ width: '100%', height: '100%', zIndex: -1 }} source={{ uri: 'https://media.self.com/photos/58d693e3d92aa7631e120f9d/4:3/w_2560%2Cc_limit/GettyImages-486273040.jpg' }}>
-                                <View style={styles.imageOverlay}>
-                                    <Text style={styles.imageOverlayText}>30</Text>
-                                    <Text style={styles.imageOverlayText}>Min</Text>
-                                </View>
-                            </ImageBackground>
-                        </View>
-                        <View style={styles.listConRight}>
-                            <Text style={styles.listConRightH1}>360 Drgrees Stronger</Text>
-                            <Text style={styles.listConRightH2}>Intermediate - Basic Equipments - Strength</Text>
-                        </View>
-                    </View> 
+                    {/* {console.log(savedWorkouts)} */}
+                    {  
+                        savedWorkouts !== null ?
+                            Object.keys(savedWorkouts).map((key, index)=>{  
+                                return (                           
+                                <Pressable key={index} onPress={() => navigation.navigate('previewVideo', {
+                                                                        items: savedWorkouts[key]
+                                                                    })
+                                                                } 
+                                    style={styles.listCon}> 
+                                    <View style={styles.listConLeft}>
+                                        <ImageBackground 
+                                            style={{ width: '100%', height: '100%', zIndex: -1 }} 
+                                            source={{ uri: 'https://quantumleaptech.org/getFit'+savedWorkouts[key].image }}>
+                                            <View style={styles.imageOverlay}>
+                                                <Text style={styles.imageOverlayText}>{savedWorkouts[key].avg_min}</Text>
+                                                {/* <Text style={styles.imageOverlayText}>Min</Text> */}
+                                            </View>
+                                        </ImageBackground>
+                                    </View>
+                                    <View style={styles.listConRight}>
+                                        <Text style={styles.listConRightH1}>{savedWorkouts[key].name}</Text>
+                                        {/* <Text style={styles.listConRightH2}>Intermediate - Basic Equipments - Strength</Text> */}
+                                    </View>
+                                </Pressable> 
+                                )}
+                            ) 
+                        :
+                        <Text style={{ color: '#000' }}>No saved work out</Text>
+                    }
                 </ScrollView>
             </View>
         </View>
     ) 
 }
 
-
 const styles = StyleSheet.create({
+    appLoading:{
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
     container:{
         flex: 1,
     },

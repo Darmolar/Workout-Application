@@ -48,7 +48,7 @@ export default class SearchScreen extends Component{
             this.setState({...this.state, loading: true});
             var categories =  await AsyncStorage.getItem('categories');
             if(categories != null){ 
-                console.log('From Here');
+                // console.log('From Here');
                 this.setState({...this.state, categories: JSON.parse(categories)});  
                 this.setState({...this.state, loading: false});
                 this.hardRefresh();
@@ -102,7 +102,7 @@ export default class SearchScreen extends Component{
             })
             .then((response) => response.json())
             .then(async (json) => {
-                console.log(json);
+                // console.log(json);
                 if(json.message == "Unauthenticated"){ 
                     await AsyncStorage.removeItem('token') 
                     await AsyncStorage.removeItem('userDetails') 
@@ -110,7 +110,7 @@ export default class SearchScreen extends Component{
                 }
                 // this.setState({...this.state, loading: false}); 
                 if(json.status === true && json.data.data.length > 0){ 
-                    console.log(json) ;
+                    // console.log(json) ;
                     SnackBar.show('Fetched successfully', { duration: 4000  }) 
                     await AsyncStorage.setItem('categories', JSON.stringify(json.data)); 
                     this.setState({...this.state, categories: json.data, refreshing: false}); 

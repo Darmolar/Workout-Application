@@ -13,7 +13,7 @@ export default function workSettingsScreen({ navigation }){
     const [ token, setToken ] = useState('');
     const [ userDetails, setUserDetails ] = useState({});  
     const [ loading, setLoading ] = useState(false);  
-
+ 
     useEffect(() => {
        getUserDetails(); 
     },[])

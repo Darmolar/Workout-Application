@@ -21,22 +21,19 @@ export default class ForYouScreen extends Component{
           refreshing: false,
           token: ''
         }
-    } 
+    }  
 
-    async componentDidMount() {    
-        await AsyncStorage.removeItem('workOuts');
+    async componentDidMount() {     
         this.getData();
         this.props.navigation.addListener('focus', () => {
             this.hardRefresh();
           });
     }
-        
-    getData = async () => {
-        await AsyncStorage.removeItem('savedWorkouts');  
+         
+    getData = async () => {   
+        // await AsyncStorage.removeItem('savedWorkouts');
         var token = await AsyncStorage.getItem('token');
-        var userDetails = await AsyncStorage.getItem('userDetails'); 
-        var savedWorkouts = await AsyncStorage.getItem('savedWorkouts');
-        console.log('savedWorkouts', JSON.parse(savedWorkouts));
+        var userDetails = await AsyncStorage.getItem('userDetails');  
         if(token !== null && userDetails !== null){
             this.setState({userDetails: JSON.parse(userDetails), token: JSON.parse(token)}) 
             this.handleWorkOuts(JSON.parse(token));
@@ -53,7 +50,7 @@ export default class ForYouScreen extends Component{
             var workOuts =  await AsyncStorage.getItem('workOuts');
             // console.log(workOuts);
             if(workOuts != null){ 
-                console.log('From Here');
+                // console.log('From Here');
                 this.setState({...this.state, workOuts: JSON.parse(workOuts)});  
                 this.setState({...this.state, loading: false});
                 this.hardRefresh();
@@ -136,13 +133,13 @@ export default class ForYouScreen extends Component{
         var savedWorkouts = await AsyncStorage.getItem('savedWorkouts');
         if(savedWorkouts !== null){
             var alreadySavedWorkOut = JSON.parse(savedWorkouts);
-            alreadySavedWorkOut[id] = id;
+            alreadySavedWorkOut[id.id] = id;
             // console.log(alreadySavedWorkOut)
             await AsyncStorage.setItem('savedWorkouts', JSON.stringify(alreadySavedWorkOut));
             SnackBar.show('Saved successfully', { duration: 4000 }) 
         }else{
             var newSavedWorkOut = new Object();
-            newSavedWorkOut[id] = id;
+            newSavedWorkOut[id.id] = id;
             await AsyncStorage.setItem('savedWorkouts', JSON.stringify(newSavedWorkOut));
             SnackBar.show('Saved successfully', { duration: 4000 }) 
         }
@@ -200,7 +197,7 @@ export default class ForYouScreen extends Component{
                                                             <ImageBackground 
                                                                 source={{ uri: 'https://quantumleaptech.org/getFit'+item.image }}  style={styles.cardImage}>
                                                                 <View style={styles.cardText}>
-                                                                    <Icon name="ios-cloud-download-outline" color="black" size={20} onPress={() => this.saveWorkOut(item.id) } />
+                                                                    <Icon name="ios-cloud-download-outline" color="black" size={20} onPress={() => this.saveWorkOut(item) } />
                                                                 </View>
                                                             </ImageBackground>
                                                             <View >

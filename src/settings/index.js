@@ -1,11 +1,56 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import Icon from '@expo/vector-icons/Ionicons';
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
+import SnackBar from 'rn-snackbar'
 
 const { width, height } = Dimensions.get('window');
-
+ 
 export default function indexScreen({ navigation }){
+    const [ playMusic, setPlayMusic ] = useState(false);
+    const [ drillTiming, setDrilTiming ] = useState(false);
+    const [ token, setToken ] = useState('');
+    const [ userDetails, setUserDetails ] = useState({});  
+    const [ loading, setLoading ] = useState(false);  
+
+    useEffect(() => {
+       getUserDetails(); 
+    },[])
+ 
+    const getUserDetails = async () => {
+        setLoading(true);
+        var token = await AsyncStorage.getItem('token');
+        var userDetails = await AsyncStorage.getItem('userDetails');
+        if(token !== null && userDetails !== null){ 
+            setToken(JSON.parse(token));  
+            var data = JSON.parse(userDetails); 
+            setUserDetails(data);
+            console.log(data);
+            setLoading(false);
+            var playMusic = await AsyncStorage.getItem('playMusic'); 
+            var playMusicValue = await AsyncStorage.getItem('drillTiming');
+            if(playMusic != null){ 
+                setPlayMusic(JSON.parse(playMusic).playMusic);
+            }
+            if(playMusicValue != null){ 
+                setDrilTiming(JSON.parse(playMusicValue).drillTime);
+            }
+            return true;
+        }else{
+            navigation.navigate('Login');
+        }  
+        return false
+    }
+
+ 
+    if(loading == true){
+        return (
+            <View style={styles.appLoading}>
+                <ActivityIndicator color="#000" size="large" />
+            </View>
+        )
+    } 
     return(
         <View style={styles.container}>
             <View style={styles.header}>
@@ -18,10 +63,11 @@ export default function indexScreen({ navigation }){
                 <View style={styles.bodyListContainer}>
                     <TouchableOpacity style={styles.listContainer}>
                         <Text style={styles.listContainerText}>Email</Text>
-                        <Text style={[styles.listContainerText, { fontSize: 14 }]}>johndoe@gmail.com</Text>
+                        <Text style={[styles.listContainerText, { fontSize: 14 }]}>{userDetails.email}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.listContainer} >
                         <Text style={styles.listContainerText}>Mobile Number</Text> 
+                        <Text style={[styles.listContainerText, { fontSize: 14 }]}>{ userDetails.phone_number}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.listContainer} onPress={() => navigation.navigate('aboutYouSettings')}>
                         <Text style={styles.listContainerText}>About You</Text> 
@@ -52,6 +98,11 @@ export default function indexScreen({ navigation }){
 }
 
 const styles = StyleSheet.create({
+    appLoading:{
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
     container:{
         flex: 1,
     },

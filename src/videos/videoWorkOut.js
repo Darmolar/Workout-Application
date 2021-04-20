@@ -1,6 +1,8 @@
 import { StatusBar } from 'expo-status-bar';
+import Constants from 'expo-constants';
+import { activateKeepAwake, deactivateKeepAwake } from 'expo-keep-awake';
 import React, { Component, useRef, useState, useEffect } from 'react';
-import { StyleSheet, Text, View, Image, ImageBackground, Dimensions, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native'; 
+import { StyleSheet, Text, View, Image, ImageBackground, Dimensions, TouchableOpacity, TextInput, ActivityIndicator, Alert, Modal } from 'react-native'; 
 import * as Animatable from 'react-native-animatable';
 import { ScrollView } from 'react-native-gesture-handler';
 import Icon from '@expo/vector-icons/Ionicons';
@@ -12,100 +14,93 @@ import AppLoading from 'expo-app-loading';
 import { Asset, useAssets } from 'expo-asset'; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SnackBar from 'rn-snackbar'
+import * as Notifications from 'expo-notifications';
 import * as Speech from 'expo-speech';
+import SwitchSelector from "react-native-switch-selector";
 
-function cacheImages(images) {
-    return images.map(image => {
-        if (typeof image === 'string') {
-            return Image.prefetch(image);
-        } else {
-            return Asset.fromModule(image).downloadAsync();
-        }
-    });
-}
-const speach = `Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin  
-                generators on the Internet tend to repeat predefined chunks as necessary, making this the first true generator on the Internet. 
-                It uses a dictionary of over 200 Latin words, combined with a handful of model sentence structures, to generate Lorem Ipsum which 
-                looks reasonable. The generated Lorem Ipsum is therefore always free from repetition, injected humour, or non-characteristic words etc.`;
+Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: false,
+        shouldSetBadge: false,
+    }),
+});
 
+const effortOptions = [ 
+    { label: "Very Light", value: "Very Light" },
+    { label: "Moderate", value: "Moderate" }, 
+    { label: "Hard", value: "Hard" }, 
+  ];
+const locationOptions = [
+    { label: "Gym", value: "Gym" },
+    { label: "Home", value: "Home" },
+    { label: "Outside", value: "Outside" } ,
+  ];
+ 
 const { width, height } = Dimensions.get('window')
 
 export default function workOutVideoScreen ({route, navigation}){ 
-    const { videos } = route.params; 
-    const [ token, setToken ] = useState('');
-    const [ userDetails, setUserDetails ] = useState({}); 
+    const { videos, token, user, workout } = route.params;  
+    const [ bearerToken, setToken ] = useState(token);
+    const [ userDetails, setUserDetails ] = useState(user); 
+    const [ effort, setEffort ] = useState('');
+    const [ location, setLocation ] = useState('');
     const [ useMUsic, setUseMusic ] = useState(true);
     const [ pauseVideo, setPauseVideo ] = useState(false);
     const [ durationSec, setDurationSec ] = useState('');
-    const [ isReady, setIsReady ]= useState(true);
+    const [ isReady, setIsReady ]= useState(false);
     const [ videoIndex, setvideoIndex ] = useState(0);
-    const [ currentVideo, setCurrentVideo ] = useState(videos.videos[videoIndex].url);
+    const [ currentVideo, setCurrentVideo ] = useState(videos.videos[videoIndex].uri);
+    const [ seconds, setSeconds ] = React.useState(0);
+    const [ finishedWorkOut, setfinishedWorkOut ] = React.useState(false);
     const video = useRef();  
-    const myVideos = [];
-    videos.videos.forEach((element, index) => {
-        myVideos[index] = 'https://quantumleaptech.org/getFit'+element.url;
-    });
-
-    const [assets] = useAssets(myVideos);
-
-    // console.log(myVideos);
-    useEffect(() => {
-        navigation.addListener('beforeRemove', (e) => {
-            // if (!hasUnsavedChanges) {
-            //   // If we don't have unsaved changes, then we don't need to do anything
-            //   return;
-            // }
-    
-            // Prevent default behavior of leaving the screen
-            e.preventDefault();
-    
-            // Prompt the user before leaving the screen
-            Alert.alert(
-              'Leave Workout?',
-              'Are you sure to discard them and leave?',
-              [
-                { text: "Don't leave", style: 'cancel', onPress: () => {} },
-                {
-                  text: 'Discard',
-                  style: 'destructive',
-                  // If the user confirmed, then we dispatch the action we blocked earlier
-                  // This will continue the action that had triggered the removal of the screen
-                  onPress: () => { Speech.isSpeakingAsync() ? Speech.stop() : null; navigation.dispatch(e.data.action)}
-                },
-              ]
-            );
-          }),
+    const [expoPushToken, setExpoPushToken] = useState('');
+    const [notification, setNotification] = useState(false);
+    const notificationListener = useRef();
+    const responseListener = useRef();  
+    useEffect(() => { 
+        console.log(videos.videos)
+        const timer = setInterval(() => {
+            setSeconds(seconds => seconds + 1); 
+          }, 1000); 
+        
         getUserDetails(); 
+        registerForPushNotificationsAsync().then(token => setExpoPushToken(token)); 
+        notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+            setNotification(notification);
+        }); 
+        return () => { 
+            clearInterval(timer);
+        };
     }, [])
   
     const getUserDetails = async () => {
-        setIsReady(false);  
-        setPauseVideo(false)
+        setPauseVideo(true);
+        activateKeepAwake(); 
         var token = await AsyncStorage.getItem('token');
         var userDetails = await AsyncStorage.getItem('userDetails');  
         if(token !== null && userDetails !== null){ 
             setToken(JSON.parse(token));  
-            setUserDetails(JSON.parse(userDetails));                
+            setUserDetails(JSON.parse(userDetails)); 
+            setPauseVideo(false);  
             const playMusicValue = await AsyncStorage.getItem('playMusic');  
             if(playMusicValue != null){ 
                 updateCurrentVideo(JSON.parse(playMusicValue).playMusic);
             } else{
                 updateCurrentVideo(false);
             } 
+            setIsReady(true);  
         }else{
+            deactivateKeepAwake(); 
             navigation.navigate('Login');
         }  
         return false;
     }  
 
-    const updateCurrentVideo = async (canPlayMusic) => { 
-        console.log(canPlayMusic)
-        setUseMusic(canPlayMusic); 
-        if(canPlayMusic == false){
-            console.log('why using me', useMUsic)
-            Speech.speak(speach); 
-        }
+    const updateCurrentVideo = async (canPlayMusic) => {  
+        setUseMusic(canPlayMusic);  
         setIsReady(true); 
+        sendPushNotification(expoPushToken, videos.name);
         return true;
     }
 
@@ -117,45 +112,65 @@ export default function workOutVideoScreen ({route, navigation}){
         } 
         
         await video.current.getStatusAsync()
-            .then(function(result) { 
-                // console.log(result);
+            .then(function(result) {  
                 if(result.durationMillis && result.positionMillis){   
                     var millis = result.positionMillis;
                     var minutes = Math.floor(millis / 60000);
-                    var seconds = ((millis % 60000) / 1000).toFixed(0);
-                    // console.log(minutes + ":" + (seconds < 10 ? '0' : '') + seconds);
+                    var seconds = ((millis % 60000) / 1000).toFixed(0); 
                     setDurationSec(minutes + ":" + (seconds < 10 ? '0' : '') + seconds);
                 }
             })
-            .catch(failureCallback => console.log(failureCallback)); 
+            .catch(failureCallback => console.log('Error')); 
     } 
 
     const updatePauseVideo = async (value) => {
-        setPauseVideo(value); 
-        if(useMUsic == false){
-            value == true ? 
-                Speech.pause()
-            :
-                Speech.resume()
-            ;
-        }
+        setPauseVideo(value);  
     }
 
-    const updateVideoLIst = async (current ) =>{  
-        if(!(useMUsic)){
-            console.log('why using me nowwww', useMUsic)
-            Speech.speak(speach); 
-        }
-        return current != videos.videos.length ? setCurrentVideo(videos.videos[videoIndex + 1].url) : null;
+    const updateVideoLIst = async (current ) =>{   
+        videos.videos[videoIndex].confimed = true;
+        return videoIndex != videos.videos.length ? setCurrentVideo(videos.videos[videoIndex + 1].uri) : setfinishedWorkOut(true);
     }
 
-    if (!assets) {
-        return (
-          <View style={styles.loadingCotainer}>
-              <ActivityIndicator color="#000" size="large" />
-          </View>
-        );
+    const finishedSaveMyWorkOut = async () =>{  
+        setIsReady(false);
+        deactivateKeepAwake(); 
+        video.current.stopAsync();
+        var myLog = {
+            work_out_id: workout.id,
+            user_id: userDetails.id, 
+            location: location,
+            effort: effort,
+            duration: (seconds/60).toFixed(1)
+        } 
+        console.log(myLog);
+        await fetch(`https://quantumleaptech.org/getFit/api/v1/user_workout/add`,{
+            method: 'POST', 
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${bearerToken}` 
+            },
+            body: JSON.stringify(myLog)
+        })
+        .then((response) => response.json())
+        .then((json) => {  
+            if(json.status === true){    
+                navigation.goBack();
+            } 
+        }) 
+        .catch((error) => {    
+            // console.error(error)
+        });   
     }
+ 
+    // if(isReady == false){
+    //     return (
+    //         <View style={styles.appLoading}>
+    //             <ActivityIndicator color="#000" size="large" />
+    //         </View>
+    //     )
+    // } 
  
     return(
         <View style={styles.container}>
@@ -163,43 +178,208 @@ export default function workOutVideoScreen ({route, navigation}){
              <View style={styles.videoPriview}>
                 <View style={styles.control}>
                     <Text style={styles.durationVideo}>{ durationSec }</Text>
-                    <Icon name={ pauseVideo ? 'ios-play-outline' : 'ios-pause-outline'} size={28} color="#FFF" onPress={() => updatePauseVideo(pauseVideo == true ? false : true) } />
+                    <Icon   
+                            name={ pauseVideo ? 'ios-play-outline' : 'ios-pause-outline'} 
+                            size={28} color="#FFF" 
+                            onPress={() => updatePauseVideo(pauseVideo == true ? false : true) } 
+                        />
                 </View>
                 <Video
-                    ref={video}
-                    style={styles.video}
-                    source={{
-                        uri: 'https://quantumleaptech.org/getFit'+currentVideo
-                    }}
-                    useNativeControls={false}
-                    resizeMode={Video.RESIZE_MODE_COVER}
-                    isLoopin={false} 
-                    usePoster={true}
-                    shouldPlay={!pauseVideo}
-                    isMuted={!useMUsic}
-                    onPlaybackStatusUpdate={status => millisToMinutesAndSeconds(status) }
-                />
-             </View>
-             <View style={{ width, padding: 10, justifyContent: 'center' }}>
-                 <Text style={{ color: 'grey', fontSize: 16, fontFamily: 'Raleway-SemiBold' }}>Mobility</Text>
-             </View>
-             <View style={styles.videoListCon}>
-                 {
-                     videos.videos != null &&
-                     videos.videos.map((item, index) => (
-                        <TouchableOpacity easing={'linear'} onPress={() => { setDurationSec(0); setCurrentVideo(item.url) }} style={styles.videoList} key={index}>
+                        ref={video}
+                        style={styles.video}
+                        source={{
+                            uri: currentVideo
+                        }}
+                        useNativeControls={false}
+                        resizeMode={Video.RESIZE_MODE_COVER}
+                        isLoopin={false} 
+                        usePoster={true}
+                        shouldPlay={!pauseVideo}
+                        isMuted={!useMUsic}
+                        onPlaybackStatusUpdate={status => millisToMinutesAndSeconds(status) }
+                    />
+                </View>
+                <View style={{ width, padding: 10, justifyContent: 'center' }}>
+                    <Text style={{ color: 'grey', fontSize: 16, fontFamily: 'Raleway-SemiBold' }}>Mobility</Text>
+                </View>
+                <View style={styles.videoListCon}> 
+                {
+                    videos.videos != null &&
+                    videos.videos.map((item, index) => (
+                        <TouchableOpacity  
+                                disabled={item.confimed === true}
+                                easing={'linear'} 
+                                onPress={() => { setDurationSec(0); setCurrentVideo(item.uri); setvideoIndex(index) }} 
+                                style={styles.videoList} key={index}
+                            >
                             <Animatable.View animation="slideInRight" style={styles.durationCon}>
                                 <Text style={styles.duration}>{ item.duration }</Text>
                             </Animatable.View>
                             <Animatable.View animation="slideInRight" style={styles.titleCon}> 
                                 <Text style={styles.title}>{ item.name }</Text>
                             </Animatable.View>
+                            <Animatable.View animation="slideInRight" style={[styles.titleCon, { width: '20%', alignItems: 'flex-end' }]}> 
+                                { item.confimed &&  <Icon name="checkmark-done" size={24} color="green" /> }                                
+                            </Animatable.View>
                         </TouchableOpacity>
-                     ))
-                 } 
-             </View>
-        </View>
+                    ))
+                } 
+                </View>
+                            
+                <Modal
+                    animationType="slide"
+                    transparent={true}
+                    visible={pauseVideo} 
+                >
+                <View style={styles.centeredView}>
+                    <View style={styles.modalView}> 
+                        <View style={styles.bgImage}> 
+                            <View  > 
+                                <View style={styles.controlsContainer}> 
+                                    <View animation="slideInDown" easing={'linear'}  style={styles.controlsContainerHead}> 
+                                        <TouchableOpacity style={styles.cardConControl}  onPress={() => { setPauseVideo(false);  navigation.navigate('workSettings') }} >
+                                            <Icon name="ios-settings-outline" size={24} color="#fff" />
+                                        </TouchableOpacity>
+                                        <TouchableOpacity onPress={() => updatePauseVideo(pauseVideo == true ? false : true) } style={[styles.cardConControl, { width: 100, height: 100, borderRadius: 100 }]}>                                        
+                                            <Icon name={pauseVideo ? 'ios-play-outline' : 'ios-pause-outline'} size={50} color="#fff" />  
+                                        </TouchableOpacity>
+                                        <TouchableOpacity style={styles.cardConControl} onPress={() =>{  setPauseVideo(false); navigation.navigate('musicSettings') }} >
+                                            <Icon name="ios-musical-notes-outline" size={24} color="#fff" />
+                                        </TouchableOpacity>
+                                    </View>  
+                                    <View animation="slideInDown" easing={'linear'}  style={styles.controlsContainerHead}> 
+                                        <TouchableOpacity style={styles.cardBTNControl}  onPress={() =>  setfinishedWorkOut(true) } >
+                                            <Text style={{ color: '#FFF', fontFamily: 'Raleway-Bold', }}>End Workout</Text>
+                                        </TouchableOpacity> 
+                                    </View> 
+                                </View>
+                            </View>
+                        </View>
+                    </View>
+                </View>
+                </Modal>  
+             
+                <Modal
+                        animationType="slide"
+                        transparent={true}
+                        visible={finishedWorkOut} 
+                    >
+                    <View style={styles.centeredView}>
+                        <View style={styles.modalView}>   
+                            <ImageBackground
+                                    resizeMode="cover"
+                                    source={{ uri: 'https://quantumleaptech.org/getFit'+workout.image }} 
+                                    style={[styles.bgImage, {height: '60%'}]}>
+                                    <View style={styles.overlay2}>
+                                        <View style={styles.title}>
+                                            <Text style={[styles.titleText, { color: '#fff', fontSize: 25, } ]}>{workout.name}</Text>
+                                        </View> 
+                                    </View>
+                            </ImageBackground> 
+                            <View style={styles.activityCon}>
+                                <View style={{ flexDirection: 'row', padding: 20,borderBottomWidth: .5, borderColor: '#000' }}>
+                                    <View style={{ alignItems: 'center', width: '50%' }}>
+                                        <Text style={{ fontFamily: 'Raleway-Regular', top: 5 }}>{(seconds/60).toFixed(2) }</Text>
+                                        <Text style={{ fontFamily: 'Raleway-Regular', top: 5 }}>Duration</Text>
+                                    </View>
+                                    <View style={{ alignItems: 'center', width: '50%' }}>
+                                        <Text style={{ fontFamily: 'Raleway-Regular', top: 5 }}>8</Text>
+                                        <Text style={{ fontFamily: 'Raleway-Regular', top: 5 }}>Approx. Calories</Text>
+                                    </View>
+                                </View>
+                                <View style={{ padding: 20, }}>
+                                    <View style={{  width: '100%'}}>
+                                        <Text style={{ textAlign: 'left',   fontSize: 15,  fontFamily: 'Raleway-Regular', }}>Efforts</Text>
+                                        <SwitchSelector
+                                            options={effortOptions}
+                                            initial={0}
+                                            fontSize={14}  
+                                            textColor={'#000'}  
+                                            selectedColor={'#fff'}
+                                            buttonColor={'#000'}
+                                            borderColor={'#000'}
+                                            hasPadding
+                                            onPress={value =>  setEffort(value) }
+                                        />
+                                    </View>
+                                    <View style={{ width: '100%'}}>
+                                        <Text style={{ textAlign: 'left', marginTop: 10, fontSize: 15,  fontFamily: 'Raleway-Regular', }}>Location</Text>
+                                        <SwitchSelector
+                                            options={locationOptions}
+                                            initial={0}
+                                            fontSize={14}
+                                            textColor={'#000'}  
+                                            selectedColor={'#fff'}
+                                            buttonColor={'#000'}
+                                            borderColor={'#000'}
+                                            hasPadding
+                                            onPress={value => setLocation(value) }
+                                        />
+                                    </View>
+                                    
+                                    <View animation="slideInDown" easing={'linear'}  style={{ width: '100%', marginTop: 10 }}> 
+                                        <TouchableOpacity style={[styles.cardBTNControl, { width: '100%' }]}  onPress={() => finishedSaveMyWorkOut() } >
+                                            <Text style={{ color: '#FFF', fontFamily: 'Raleway-Bold', }}> { isReady == false ? <ActivityIndicator color="white" /> : 'Save' }</Text>
+                                        </TouchableOpacity> 
+                                    </View> 
+                                </View>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>    
+       </View>
     )
+}
+
+// Can use this function below, OR use Expo's Push Notification Tool-> https://expo.io/notifications
+async function sendPushNotification(expoPushToken, workout) {
+    const message = {
+        to: expoPushToken,
+        sound: 'default',
+        title: 'WorkOut in progress',
+        body: workout,
+        data: { someData: 'goes here' },
+    };
+
+    await fetch('https://exp.host/--/api/v2/push/send', {
+        method: 'POST',
+        headers: {
+            Accept: 'application/json',
+            'Accept-encoding': 'gzip, deflate',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(message),
+    });
+}
+
+async function registerForPushNotificationsAsync() {
+    let token;
+    if (Constants.isDevice) {
+        const { status: existingStatus } = await Notifications.getPermissionsAsync();
+        let finalStatus = existingStatus;
+        if (existingStatus !== 'granted') {
+            const { status } = await Notifications.requestPermissionsAsync();
+            finalStatus = status;
+        }
+        if (finalStatus !== 'granted') {
+            alert('Failed to get push token for push notification!');
+            return;
+        }
+        token = (await Notifications.getExpoPushTokenAsync()).data; 
+    } else {
+        alert('Must use physical device for Push Notifications');
+    }
+    
+    if (Platform.OS === 'android') {
+            Notifications.setNotificationChannelAsync('default', {
+            name: 'default',
+            importance: Notifications.AndroidImportance.MAX,
+            vibrationPattern: [0, 250, 250, 250],
+            lightColor: '#FF231F7C',
+        });
+    }
+    
+    return token;
 }
 
 const styles = StyleSheet.create({
@@ -263,7 +443,7 @@ const styles = StyleSheet.create({
         fontSize: 15
     },
     titleCon:{ 
-        width: '80%',
+        width: '60%',
         justifyContent: 'center',
         // alignItems: 'center',
     },
@@ -271,5 +451,98 @@ const styles = StyleSheet.create({
         color: '#000',
         fontFamily: 'Raleway-Bold',
         fontSize: 15
+    },
+    centeredView: {
+        flex: 1,
+        justifyContent: "flex-end",
+        alignItems: "center", 
+    },
+    modalView: {
+        width,
+        height,
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        padding: 35,
+        alignItems: "center",
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5
+    }, 
+    bgImage:{
+        width,
+        height,
+        justifyContent: 'center'
+    },
+    overlay:{
+        flex: 1,
+        justifyContent: 'flex-end', 
+    }, 
+    overlay2:{
+        flex: 1,
+        justifyContent: 'flex-end',
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    }, 
+    controlsContainer:{
+        width,
+        height: 100,
+        alignItems: 'center', 
+        marginBottom: "70%" 
+    },
+    controlsContainerHead:{
+        width,
+        flexDirection: 'row',
+        justifyContent: 'space-evenly',
+        alignItems: 'center',
+        marginVertical: 40
+    },
+    cardCon:{ 
+        // width: '30%',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    limitter:{ 
+        color: '#FFF',
+        opacity: 100,
+        fontFamily: 'Raleway-Regular',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    infoH1:{
+        color: '#FFF',
+        fontFamily: 'Raleway-Bold',
+    },
+    infoH2:{
+        color: '#FFF',
+        opacity: 100,
+        fontFamily: 'Raleway-Medium',
+    },
+    cardConControl:{ 
+        width: 50,
+        height: 50,
+        borderWidth: .3,
+        borderColor: '#fff',
+        borderRadius: 50,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    cardBTNControl:{ 
+        width: '70%',
+        height: 50,
+        borderWidth: .3,
+        backgroundColor: '#000',
+        borderRadius: 50,
+        justifyContent: 'center',
+        alignItems: 'center',
+    }, 
+    activityCon:{
+        width,
+        height: 400,
+        backgroundColor: '#FFF',
     }
 });

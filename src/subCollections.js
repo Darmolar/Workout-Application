@@ -17,7 +17,7 @@ export default function subCollectionsScreen ({route, navigation}){
     const [ subCategoryData, SetSubCategoryData ]  = useState(item)
     const [ loading, setLoading ] = useState(false);
     const [ totalWorkOuts, setTotalWorkOuts ] = useState(0);
-    console.log('log', item)
+    // console.log('log', item)
     useEffect(() => {
        getUserDetails(); 
     },[])

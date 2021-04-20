@@ -87,7 +87,7 @@ export default class CollectionScreen extends Component{
             // }
         } catch (error) { 
             this.setState({...this.state, loading: false});
-            console.error('catch error', error);
+            // console.error('catch error', error);
         } 
     } 
     

@@ -14,6 +14,7 @@ import aboutYouScreen from '../settings/aboutYou';
 import unitOfMeasureScreenfrom from '../settings/unitOfMeasure';
 import workSettingsScreen from '../settings/workSettings';
 import countrySettingsScreen from '../settings/countrySettings';
+import musicPlaylistScreen from '../settings/musicSettings';
 
 import previewVideoScreen from '../videos';
 import workOutVideoScreen from '../videos/videoWorkOut';
@@ -70,6 +71,7 @@ export default function MyStack() {
       <Stack.Screen name="uniteOfMesaureSettings" options={{headerShown: false}} component={unitOfMeasureScreenfrom} />  
       <Stack.Screen name="workSettings" options={{headerShown: false}} component={workSettingsScreen} /> 
       <Stack.Screen name="countrySettings" options={{headerShown: false}} component={countrySettingsScreen} /> 
+      <Stack.Screen name="musicSettings" options={{headerShown: false}} component={musicPlaylistScreen} /> 
       
       
       <Stack.Screen name="Saved"  options={{headerShown: false}} component={SavedScreen} /> 

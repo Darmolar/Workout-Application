@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, Image, Dimensions, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native'; 
+import { StyleSheet, Text, View, Image, Dimensions, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native'; 
 import * as Animatable from 'react-native-animatable';
 import { ScrollView } from 'react-native-gesture-handler';
 import Icon from '@expo/vector-icons/Ionicons';
@@ -41,6 +41,33 @@ export default class DashboardScreen extends Component {
     this.setState({...this.state, loading: true});
     this.getData();
     this.handleRegistration();
+
+    () => {
+        this.props.navigation.addListener('beforeRemove', (e) => { 
+          // Prevent default behavior of leaving the screen
+          e.preventDefault();
+
+          // Prompt the user before leaving the screen
+          Alert.alert( 
+            'Leave Workout?',
+            'You will be logged out',
+            [
+              { text: "Don't leave", style: 'cancel', onPress: () => {} },
+              {
+                text: 'Leave',
+                style: 'destructive',
+                // If the user confirmed, then we dispatch the action we blocked earlier
+                // This will continue the action that had triggered the removal of the screen
+                onPress: async () => { 
+                    await AsyncStorage.removeItem('token')
+                    await AsyncStorage.removeItem('userDetails')  
+                    navigation.dispatch(e.data.action); 
+                  }
+              },
+            ]
+          );
+        });
+    }
   }
 
   getData = async () => {

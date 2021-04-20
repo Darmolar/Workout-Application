@@ -5,8 +5,7 @@ import * as Animatable from 'react-native-animatable';
 import { ScrollView } from 'react-native-gesture-handler';
 import Icon from '@expo/vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import SnackBar from 'rn-snackbar'
- 
+import SnackBar from 'rn-snackbar'; 
 
 const { width, height } = Dimensions.get('window');
  
@@ -16,10 +15,10 @@ export default function subSearchCategoryScreen ({route, navigation}){
     const [ userDetails, setUserDetails ] = useState({}); 
     const [ subCats, setSubCats ] = useState(subCategories.sub_category);
     const [ loading, setLoading ] = useState(false);
-    const [ currentVideoList, setcurrentVideoList ] = useState([]);
+    const [ currentVideoList, setcurrentVideoList ] = useState({});
     // console.log('log', subCategories)
     useEffect(() => {
-       getUserDetails(); 
+       getUserDetails();  
     },[])
 
     const getUserDetails = async () => {
@@ -53,7 +52,7 @@ export default function subSearchCategoryScreen ({route, navigation}){
                     await AsyncStorage.removeItem('userDetails') 
                         navigation.navigate('Login'); 
                 }
-                console.log(json.data);
+                // console.log(json.data);
                 setLoading(false); 
                 if(json.status === true && json.data.data.length > 0){  
                     // console.log(json.data);
@@ -73,10 +72,10 @@ export default function subSearchCategoryScreen ({route, navigation}){
             }); 
     } 
 
-const setCurrentViews = async (item) =>{
-    console.log('currenView', item)
-    setcurrentVideoList(item.workouts_details)
-}
+    const setCurrentViews = async (item) =>{
+        // console.log('currenView', item)
+        item.workouts_details ?  setcurrentVideoList(item.workouts_details) : null
+    }
 
     if(loading == true){
         return (
@@ -112,7 +111,7 @@ const setCurrentViews = async (item) =>{
                 <ScrollView style={{ padding: 10,height: height + 1000}} showsVerticalScrollIndicator={false} horizontal={false}>   
                     <Text style={{marginVertical: 5, color: 'grey', fontSize: 14, fontFamily: 'Raleway-Regular' }}>{currentVideoList.length} Workout</Text>                                    
                     {
-                        currentVideoList != null &&
+                        currentVideoList.length > 0 &&
                         currentVideoList.map(( item, index ) => {
                            return (
                             <TouchableOpacity key={index} onPress={() => navigation.navigate('previewVideo', {

@@ -49,6 +49,7 @@ export default function aboutYouScreen({ navigation }){
                             gender: userDetails.gender,
                             weight: userDetails.weight,
                             height: userDetails.height,
+                            phone_number: userDetails.phone,
                         }),
                         headers:{
                             Accept: 'application/json',
@@ -59,8 +60,14 @@ export default function aboutYouScreen({ navigation }){
                     .then((response) => response.json())
                     .then(async (json) => {
                         setLoading(false);
-                        console.log(json); 
+                        console.log(json)
                         if(json.status === true){  
+                            await AsyncStorage.removeItem('userDetails');
+                            userDetails.user_settings.gender = json.data.gender;
+                            userDetails.user_settings.weight = json.data.weight;
+                            userDetails.user_settings.height = json.data.height;  
+                            userDetails.user_settings.phone_number = json.data.phone_number;                              
+                            await AsyncStorage.setItem('userDetails', JSON.stringify(userDetails)); 
                             SnackBar.show('Saved successfully', { duration: 4000 })  
                             return true;
                         }else{
@@ -101,7 +108,7 @@ export default function aboutYouScreen({ navigation }){
                     </View> 
                     <TouchableOpacity style={styles.listContainer} onPress={() => setModalVisible(true)}>
                         <Text style={styles.listContainerText}>Gender</Text>
-                        <Text style={[styles.listContainerText, { fontSize: 14, textTransform: 'capitalize' }]}>{ userDetails.gender }</Text>
+                        <Text style={[styles.listContainerText, { fontSize: 14, textTransform: 'capitalize' }]}>{  userDetails.user_settings ? userDetails.user_settings.gender : '' }</Text>
                     </TouchableOpacity>
                     <View style={styles.listContainerTab}>  
                     </View> 
@@ -111,7 +118,7 @@ export default function aboutYouScreen({ navigation }){
                             <TextInput
                                     style={styles.input}
                                     placeholder={'0'}
-                                    value={userDetails.height}
+                                    value={ userDetails.user_settings ? userDetails.user_settings.height  : ''}
                                     onChangeText={value => setUserDetails({ ...userDetails, height: value }) }
                                 />
                         </View>
@@ -122,8 +129,19 @@ export default function aboutYouScreen({ navigation }){
                             <TextInput
                                     style={styles.input}
                                     placeholder={'0'}
-                                    value={userDetails.weight}
+                                    value={ userDetails.user_settings ? userDetails.user_settings.weight  : ''}
                                     onChangeText={value => setUserDetails({ ...userDetails, weight: value }) }
+                                />
+                        </View>
+                    </TouchableOpacity> 
+                    <TouchableOpacity style={styles.listContainer}>
+                        <Text style={styles.listContainerText}>Phone</Text> 
+                        <View style={[styles.listContainerText]}>
+                            <TextInput
+                                    style={styles.input}
+                                    placeholder={'0'}
+                                    value={ userDetails.phone_number }
+                                    onChangeText={value => setUserDetails({ ...userDetails, phone_number: value }) }
                                 />
                         </View>
                     </TouchableOpacity> 
@@ -132,7 +150,8 @@ export default function aboutYouScreen({ navigation }){
                             <Switch thumbColor="black" value={selected}  onChange={() =>  setSelected(!selected)}  />   
                             <Text style={styles.listContainerTabText}>Use default height and width</Text>                         
                         </View> 
-                        <Text style={[styles.listContainerTabText, { padding: 10, fontSize: 13,opacity: 30 }]}>*if you don't wish to enter your height and weight, select the "use default"
+                        <Text style={[styles.listContainerTabText, { padding: 10, fontSize: 13,opacity: 30 }]}>
+                            *if you don't wish to enter your height and weight, select the "use default"
                         option and we will use a default value to perform these these calculation </Text> 
                     </View> 
                 </View>
@@ -217,7 +236,7 @@ const styles = StyleSheet.create({
     listContainer:{
         width: '100%',
         height: 50,
-        padding: 20,  
+        padding: 10,  
         justifyContent: 'space-between',
         alignItems: 'center',
         flexDirection: 'row',
@@ -228,7 +247,7 @@ const styles = StyleSheet.create({
     },
     input:{
         flex: 1,
-        fontSize: 10,
+        fontSize: 12,
         fontFamily: 'Raleway-Bold', 
     },
     radioButon:{
