@@ -7,7 +7,7 @@ import * as Animatable from 'react-native-animatable';
 import { ScrollView } from 'react-native-gesture-handler';
 import Icon from '@expo/vector-icons/Ionicons';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Video, AVPlaybackStatus } from 'expo-av';
+import { Video, AVPlaybackStatus, Audio } from 'expo-av';
 import { List } from 'react-native-paper';
 import * as Font from 'expo-font';
 import AppLoading from 'expo-app-loading';
@@ -53,17 +53,45 @@ export default function workOutVideoScreen ({route, navigation}){
     const [ currentVideo, setCurrentVideo ] = useState(videos.videos[videoIndex].uri);
     const [ seconds, setSeconds ] = React.useState(0);
     const [ finishedWorkOut, setfinishedWorkOut ] = React.useState(false);
+    const [ pauseVideoModal, setPauseVideoModal ] = useState(false);
     const video = useRef();  
     const [expoPushToken, setExpoPushToken] = useState('');
     const [notification, setNotification] = useState(false);
     const notificationListener = useRef();
-    const responseListener = useRef();  
-    useEffect(() => { 
-        console.log(videos.videos)
+    const responseListener = useRef();   
+    const soundPlaying = new Audio.Sound();
+    useEffect(() => {  
         const timer = setInterval(() => {
             setSeconds(seconds => seconds + 1); 
-          }, 1000); 
-        
+          }, 1000);    
+        navigation.addListener('beforeRemove', (e) => {
+            if (!hasUnsavedChanges) {
+                // If we don't have unsaved changes, then we don't need to do anything
+                return;
+            }
+    
+            // Prevent default behavior of leaving the screen
+            e.preventDefault();
+    
+            // Prompt the user before leaving the screen
+            Alert.alert(
+                'Discard changes?',
+                'You have unsaved changes. Are you sure to discard them and leave the screen?',
+                [
+                    { text: "Don't leave", style: 'cancel', onPress: () => {} },
+                    {
+                        text: 'Discard',
+                        style: 'destructive',
+                        // If the user confirmed, then we dispatch the action we blocked earlier
+                        // This will continue the action that had triggered the removal of the screen
+                        onPress: async () => {
+                                await soundPlaying.unloadAsync();
+                                navigation.dispatch(e.data.action)
+                            },
+                    },
+                ]
+            );
+        }) 
         getUserDetails(); 
         registerForPushNotificationsAsync().then(token => setExpoPushToken(token)); 
         notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
@@ -97,11 +125,33 @@ export default function workOutVideoScreen ({route, navigation}){
         return false;
     }  
 
-    const updateCurrentVideo = async (canPlayMusic) => {  
-        setUseMusic(canPlayMusic);  
+    const updateCurrentVideo = async (canPlayMusic) => {          
+        if(canPlayMusic === true) {
+            playMusic();
+            setUseMusic(true);
+        }else{
+            setUseMusic(false);
+        }
         setIsReady(true); 
         sendPushNotification(expoPushToken, videos.name);
         return true;
+    }
+
+    const playMusic = async () =>{
+        var playList = await AsyncStorage.getItem('workOut_audios');
+        if(playList){
+            var list = JSON.parse(playList); 
+            list.map( async (item, index) => { 
+                try {
+                    await soundPlaying.loadAsync({ uri: item.uri });
+                    await soundPlaying.playAsync(); 
+                                // await soundPlaying.unloadAsync();
+                } catch (error) {
+                    console.log('Cant play music at', item.filename , error);
+                }
+            })
+        }
+        // console.log(playList);
     }
 
     const millisToMinutesAndSeconds = async (data) => {        
@@ -125,6 +175,8 @@ export default function workOutVideoScreen ({route, navigation}){
 
     const updatePauseVideo = async (value) => {
         setPauseVideo(value);  
+        setPauseVideoModal(value);  
+        value == true ? await soundPlaying.playAsync() :  await soundPlaying.paurseAsync() ;
     }
 
     const updateVideoLIst = async (current ) =>{   
@@ -195,7 +247,7 @@ export default function workOutVideoScreen ({route, navigation}){
                         isLoopin={false} 
                         usePoster={true}
                         shouldPlay={!pauseVideo}
-                        isMuted={!useMUsic}
+                        isMuted={useMUsic}
                         onPlaybackStatusUpdate={status => millisToMinutesAndSeconds(status) }
                     />
                 </View>
@@ -203,33 +255,33 @@ export default function workOutVideoScreen ({route, navigation}){
                     <Text style={{ color: 'grey', fontSize: 16, fontFamily: 'Raleway-SemiBold' }}>Mobility</Text>
                 </View>
                 <View style={styles.videoListCon}> 
-                {
-                    videos.videos != null &&
-                    videos.videos.map((item, index) => (
-                        <TouchableOpacity  
-                                disabled={item.confimed === true}
-                                easing={'linear'} 
-                                onPress={() => { setDurationSec(0); setCurrentVideo(item.uri); setvideoIndex(index) }} 
-                                style={styles.videoList} key={index}
-                            >
-                            <Animatable.View animation="slideInRight" style={styles.durationCon}>
-                                <Text style={styles.duration}>{ item.duration }</Text>
-                            </Animatable.View>
-                            <Animatable.View animation="slideInRight" style={styles.titleCon}> 
-                                <Text style={styles.title}>{ item.name }</Text>
-                            </Animatable.View>
-                            <Animatable.View animation="slideInRight" style={[styles.titleCon, { width: '20%', alignItems: 'flex-end' }]}> 
-                                { item.confimed &&  <Icon name="checkmark-done" size={24} color="green" /> }                                
-                            </Animatable.View>
-                        </TouchableOpacity>
-                    ))
-                } 
+                    {
+                        videos.videos != null &&
+                        videos.videos.map((item, index) => (
+                            <TouchableOpacity  
+                                    disabled={item.confimed === true}
+                                    easing={'linear'} 
+                                    onPress={() => { setDurationSec(0); setCurrentVideo(item.uri); setvideoIndex(index) }} 
+                                    style={styles.videoList} key={index}
+                                >
+                                <Animatable.View animation="slideInRight" style={styles.durationCon}>
+                                    <Text style={styles.duration}>{ item.duration }</Text>
+                                </Animatable.View>
+                                <Animatable.View animation="slideInRight" style={styles.titleCon}> 
+                                    <Text style={styles.title}>{ item.name }</Text>
+                                </Animatable.View>
+                                <Animatable.View animation="slideInRight" style={[styles.titleCon, { width: '20%', alignItems: 'flex-end' }]}> 
+                                    { item.confimed &&  <Icon name="checkmark-done" size={24} color="green" /> }                                
+                                </Animatable.View>
+                            </TouchableOpacity>
+                        ))
+                    } 
                 </View>
                             
                 <Modal
                     animationType="slide"
                     transparent={true}
-                    visible={pauseVideo} 
+                    visible={pauseVideoModal} 
                 >
                 <View style={styles.centeredView}>
                     <View style={styles.modalView}> 
@@ -237,13 +289,13 @@ export default function workOutVideoScreen ({route, navigation}){
                             <View  > 
                                 <View style={styles.controlsContainer}> 
                                     <View animation="slideInDown" easing={'linear'}  style={styles.controlsContainerHead}> 
-                                        <TouchableOpacity style={styles.cardConControl}  onPress={() => { setPauseVideo(false);  navigation.navigate('workSettings') }} >
+                                        <TouchableOpacity style={styles.cardConControl}  onPress={() => { setPauseVideoModal(false);  navigation.navigate('workSettings') }} >
                                             <Icon name="ios-settings-outline" size={24} color="#fff" />
                                         </TouchableOpacity>
                                         <TouchableOpacity onPress={() => updatePauseVideo(pauseVideo == true ? false : true) } style={[styles.cardConControl, { width: 100, height: 100, borderRadius: 100 }]}>                                        
                                             <Icon name={pauseVideo ? 'ios-play-outline' : 'ios-pause-outline'} size={50} color="#fff" />  
                                         </TouchableOpacity>
-                                        <TouchableOpacity style={styles.cardConControl} onPress={() =>{  setPauseVideo(false); navigation.navigate('musicSettings') }} >
+                                        <TouchableOpacity style={styles.cardConControl} onPress={() =>{  setPauseVideoModal(false); navigation.navigate('musicSettings') }} >
                                             <Icon name="ios-musical-notes-outline" size={24} color="#fff" />
                                         </TouchableOpacity>
                                     </View>  
@@ -282,10 +334,10 @@ export default function workOutVideoScreen ({route, navigation}){
                                         <Text style={{ fontFamily: 'Raleway-Regular', top: 5 }}>{(seconds/60).toFixed(2) }</Text>
                                         <Text style={{ fontFamily: 'Raleway-Regular', top: 5 }}>Duration</Text>
                                     </View>
-                                    <View style={{ alignItems: 'center', width: '50%' }}>
+                                    {/* <View style={{ alignItems: 'center', width: '50%' }}>
                                         <Text style={{ fontFamily: 'Raleway-Regular', top: 5 }}>8</Text>
                                         <Text style={{ fontFamily: 'Raleway-Regular', top: 5 }}>Approx. Calories</Text>
-                                    </View>
+                                    </View> */}
                                 </View>
                                 <View style={{ padding: 20, }}>
                                     <View style={{  width: '100%'}}>

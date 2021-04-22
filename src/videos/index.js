@@ -24,6 +24,7 @@ export default function previewVideoScreen ({route, navigation}){
     const [ expanded, setExpanded]  = React.useState(true);
     const [ loading, setLoading ] = useState(true);
     const [ workOutSection, setWorkOutSection ] = useState(items);  
+    const [ saved, setSaved ] = useState(false);
     const [ loadingWorkOuts, setLoadingWorkOuts ] = useState(false);
     // console.log(items);
     const gifDir = FileSystem.cacheDirectory + 'workouts/workouts_/storage/videos/'+items.id;
@@ -49,12 +50,20 @@ export default function previewVideoScreen ({route, navigation}){
         // await AsyncStorage.removeItem(`workOutVideo_${workOutSection.id}`);
         var token = await AsyncStorage.getItem('token');
         var userDetails = await AsyncStorage.getItem('userDetails'); 
+        var savedWorkouts = await AsyncStorage.getItem('savedWorkouts');
         setWorkOutSection({ ...workOutSection, sections: null }); 
         if(token !== null && userDetails !== null){
             // console.log(token); 
             setToken(JSON.parse(token)); 
             hardRefresh(JSON.parse(token));
             setUserDetails(JSON.parse(userDetails)) 
+            if(savedWorkouts !== null){
+                var alreadySavedWorkOut = JSON.parse(savedWorkouts);
+                var myId = workOutSection.id;
+                if(alreadySavedWorkOut.myId){  
+                    setSaved(true);
+                }
+            }
             return true;
         }else{
             navigation.navigate('Login');
@@ -78,13 +87,13 @@ export default function previewVideoScreen ({route, navigation}){
                         navigation.navigate('Login'); 
                 }   
                 if(json.status === true && json.data.videos.length > 0){   
-                    SnackBar.show('Fetched successfully', { duration: 4000 })  
+                    SnackBar.show('Fetched successfully', { duration: 2000 })  
                     await setWorkOutSection({ ...workOutSection, sections: json.data }); 
                     setLoading(false);
                     return true;
                 }else{ 
                     setLoading(false);
-                    SnackBar.show(json.message, { duration: 4000  })  
+                    SnackBar.show(json.message, { duration: 2000  })  
                 }
             }) 
             .catch((error) => { 
@@ -97,7 +106,7 @@ export default function previewVideoScreen ({route, navigation}){
     const cahceFIleBeforeRender = async () => { 
         try { 
             var videoCache = await AsyncStorage.getItem(`workOutVideo_${workOutSection.id}`);
-            console.log(videoCache) 
+            // console.log(videoCache) 
             if(videoCache == null ){
                 setLoadingWorkOuts(true);
                 await ensureDirExists(); 
@@ -129,17 +138,27 @@ export default function previewVideoScreen ({route, navigation}){
 
     const saveWorkOut = async (id) => {
         var savedWorkouts = await AsyncStorage.getItem('savedWorkouts');
+        SnackBar.dismiss();
         if(savedWorkouts !== null){
             var alreadySavedWorkOut = JSON.parse(savedWorkouts);
-            alreadySavedWorkOut[id.id] = id;
-            // console.log(alreadySavedWorkOut)
-            await AsyncStorage.setItem('savedWorkouts', JSON.stringify(alreadySavedWorkOut));
-            SnackBar.show('Saved successfully', { duration: 4000 }) 
+            var myId = id.id
+            if(alreadySavedWorkOut.myId){ 
+                delete alreadySavedWorkOut.myId;
+                setSaved(false);
+                await AsyncStorage.setItem('savedWorkouts', JSON.stringify(alreadySavedWorkOut));
+                SnackBar.show('Removed successfully', { duration: 1000 }) 
+            }else{ 
+                alreadySavedWorkOut.myId = id;
+                setSaved(true);
+                await AsyncStorage.setItem('savedWorkouts', JSON.stringify(alreadySavedWorkOut));
+                SnackBar.show('Saved successfully', { duration: 1000 }) 
+            }
         }else{
             var newSavedWorkOut = new Object();
             newSavedWorkOut[id.id] = id;
+            setSaved(true);
             await AsyncStorage.setItem('savedWorkouts', JSON.stringify(newSavedWorkOut));
-            SnackBar.show('Saved successfully', { duration: 4000 }) 
+            SnackBar.show('Saved successfully', { duration: 1000 }) 
         }
         return true;
     }
@@ -161,7 +180,7 @@ export default function previewVideoScreen ({route, navigation}){
                         <Text style={styles.headerText}>Overview</Text>
                     </View>
                     <View style={{ width: '30%',  flexDirection: 'row', justifyContent: 'space-evenly' }}>
-                        <Icon name="cloud-download-outline" size={27} color="black"  onPress={() => saveWorkOut(workOutSection) } />
+                        <Icon name={saved == true ? "cloud-download" : "cloud-download-outline"} size={27} color="black"  onPress={() => saveWorkOut(workOutSection) } />
                         <Icon name="md-share-social-outline" size={27} color="black" />
                     </View>
                 </View>

@@ -54,13 +54,13 @@ export default function subCollectionsScreen ({route, navigation}){
                 } 
                 if(json.status === true && json.data.data.length > 0){  
                     // console.log(json.data);
-                    SnackBar.show('Fetched successfully', { duration: 4000 })  
+                    SnackBar.show('Fetched successfully', { duration: 1000 })  
                     SetSubCategoryData({ ...subCategoryData, subCategory: json.data.data }); 
                     setLoading(false);
                     return true;
                 }else{ 
                     setLoading(false);
-                    SnackBar.show(json.message, { duration: 4000  })  
+                    SnackBar.show(json.message, { duration: 1000  })  
                 }
             }) 
             .catch((error) => { 

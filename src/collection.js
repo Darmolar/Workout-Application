@@ -76,7 +76,7 @@ export default class CollectionScreen extends Component{
                             this.setState({...this.state, loading: false}); 
                             return true;
                         }else{
-                            SnackBar.show(json.message, { duration: 4000 });
+                            SnackBar.show(json.message, { duration: 1000 });
                             this.setState({...this.state, loading: false}); 
                         }
                     }) 
@@ -114,7 +114,7 @@ export default class CollectionScreen extends Component{
                     this.setState({...this.state, refreshing: false}); 
                     return true;
                 }else{
-                    SnackBar.show(json.message, { duration: 4000 });
+                    SnackBar.show(json.message, { duration: 1000 });
                     this.setState({...this.state, refreshing: false}); 
                 }
             }) 

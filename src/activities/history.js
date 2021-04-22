@@ -58,14 +58,14 @@ export default function HistoryScreen (){
                 setLoading(false); 
                 if(json.status === true && json.data.data.length > 0){  
                     // console.log(json.data);
-                    SnackBar.show('Fetched successfully', { duration: 4000 })  
+                    SnackBar.show('Fetched successfully', { duration: 1000 })  
                     setSubCats(json.data.data); 
                     setCurrentViews(json.data.data[0]);
                     setLoading(false);
                     return true;
                 }else{ 
                     setLoading(false);
-                    SnackBar.show(json.message, { duration: 4000  })  
+                    SnackBar.show(json.message, { duration: 1000  })  
                 }
             }) 
             .catch((error) => { 

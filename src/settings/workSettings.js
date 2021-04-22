@@ -30,6 +30,7 @@ export default function workSettingsScreen({ navigation }){
             var playMusic = await AsyncStorage.getItem('playMusic'); 
             var playMusicValue = await AsyncStorage.getItem('drillTiming');
             if(playMusic != null){ 
+                // console.log(playMusic);
                 setPlayMusic(JSON.parse(playMusic).playMusic);
             }
             if(playMusicValue != null){ 

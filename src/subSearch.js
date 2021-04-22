@@ -39,7 +39,7 @@ export default function subSearchCategoryScreen ({route, navigation}){
 
     const hardRefresh = async (tokenId) => { 
         setLoading(true);  
-        await fetch(`https://quantumleaptech.org/getFit/api/v1/category/workout/${subCategories.id}`,{
+        await fetch(`https://quantumleaptech.org/getFit/api/v1/sub_category/workout/${subCategories.sub_category[0].id}`,{
                 headers:{
                     Accept: 'application/json',
                     Authorization: `Bearer ${tokenId}` 
@@ -52,38 +52,63 @@ export default function subSearchCategoryScreen ({route, navigation}){
                     await AsyncStorage.removeItem('userDetails') 
                         navigation.navigate('Login'); 
                 }
-                // console.log(json.data);
+                console.log('the data', json.data);
                 setLoading(false); 
-                if(json.status === true && json.data.data.length > 0){  
+                if(json.status === true && json.data.length > 0){  
                     // console.log(json.data);
-                    SnackBar.show('Fetched successfully', { duration: 4000 })  
-                    setSubCats(json.data.data); 
-                    setCurrentViews(json.data.data[0]);
+                    SnackBar.show('Fetched successfully', { duration: 1000 })  
+                    // setSubCats(json.data); 
+                    setcurrentVideoList(json.data);
                     setLoading(false);
                     return true;
                 }else{ 
+                    setcurrentVideoList([]);
                     setLoading(false);
-                    SnackBar.show(json.message, { duration: 4000  })  
+                    SnackBar.show(json.message, { duration: 1000  })  
                 }
             }) 
             .catch((error) => { 
                 setLoading(false);
-                // console.error(error);
+                console.error(error);
             }); 
     } 
 
     const setCurrentViews = async (item) =>{
-        // console.log('currenView', item)
-        item.workouts_details ?  setcurrentVideoList(item.workouts_details) : null
+        console.log(item)
+        setLoading(true);  
+        await fetch(`https://quantumleaptech.org/getFit/api/v1/sub_category/workout/${item.id}`,{
+                headers:{
+                    Accept: 'application/json',
+                    Authorization: `Bearer ${token}` 
+                }    
+            })
+            .then((response) => response.json())
+            .then(async (json) => { 
+                if(json.message == "Unauthenticated."){ 
+                    await AsyncStorage.removeItem('token') 
+                    await AsyncStorage.removeItem('userDetails') 
+                        navigation.navigate('Login'); 
+                }
+                console.log('the data', json.data);
+                setLoading(false); 
+                if(json.status === true && json.data.length > 0){  
+                    // console.log(json.data);
+                    SnackBar.show('Fetched successfully', { duration: 1000 })   
+                    setcurrentVideoList(json.data);
+                    setLoading(false);
+                    return true;
+                }else{ 
+                    setcurrentVideoList([]);
+                    setLoading(false);
+                    SnackBar.show(json.message, { duration: 1000  })  
+                }
+            }) 
+            .catch((error) => { 
+                setLoading(false);
+                console.error(error);
+            }); 
     }
 
-    if(loading == true){
-        return (
-            <View style={styles.appLoading}>
-                <ActivityIndicator color="#000" size="large" />
-            </View>
-        )
-    }
     
     return (
         <SafeAreaView style={ styles.conatiner }> 
@@ -99,7 +124,7 @@ export default function subSearchCategoryScreen ({route, navigation}){
                         subCats.length > 0 &&
                         subCats.map((item, index) => {                            
                             return (
-                                <TouchableOpacity onPress={() => setCurrentViews(subCats[index])} key={index} style={styles.middleButton}>
+                                <TouchableOpacity onPress={() => setCurrentViews(item)} key={index} style={styles.middleButton}>
                                     <Text style={styles.middleButtonText}>{ item.name }</Text>
                                 </TouchableOpacity>
                             )
@@ -107,36 +132,43 @@ export default function subSearchCategoryScreen ({route, navigation}){
                     } 
                 </ScrollView>
             </View>
-            <View style={styles.body}>
-                <ScrollView style={{ padding: 10,height: height + 1000}} showsVerticalScrollIndicator={false} horizontal={false}>   
-                    <Text style={{marginVertical: 5, color: 'grey', fontSize: 14, fontFamily: 'Raleway-Regular' }}>{currentVideoList.length} Workout</Text>                                    
-                    {
-                        currentVideoList.length > 0 &&
-                        currentVideoList.map(( item, index ) => {
-                           return (
-                            <TouchableOpacity key={index} onPress={() => navigation.navigate('previewVideo', {
-                                                items: item.work_out
-                                            })} style={styles.listCon}>
-                                <View style={styles.listConLeft}>
-                                    <ImageBackground style={{ width: '100%', height: '100%', zIndex: -1 }} 
-                                    source={{ uri: 'https://quantumleaptech.org/getFit'+item.work_out.image  }}>
-                                        <View style={styles.imageOverlay}>
-                                            <Text style={styles.imageOverlayText}>{ item.work_out.avg_min }</Text>
-                                            {/* <Text style={styles.imageOverlayText}>Min</Text> */}
-                                        </View>
-                                    </ImageBackground>
-                                </View>
-                                <View style={styles.listConRight}>
-                                    <Text style={styles.listConRightH1}>{ item.work_out.name } </Text>
-                                    <Text style={styles.listConRightH2}>{ item.work_out.intensity }  { item.work_out.equipment }  { item.work_out.level }</Text>
-                                </View>
-                            </TouchableOpacity>
-                           )
-                        }) 
-                    } 
-                </ScrollView>
-            </View>
-        </SafeAreaView>
+            {
+                loading == true ?                
+                    <View style={styles.appLoading}>
+                        <ActivityIndicator color="#000" size="large" />
+                    </View>
+                :
+                <View style={styles.body}>
+                    <ScrollView style={{ padding: 10,height: height + 1000}} showsVerticalScrollIndicator={false} horizontal={false}>   
+                        <Text style={{marginVertical: 5, color: 'grey', fontSize: 14, fontFamily: 'Raleway-Regular' }}>{currentVideoList.length} Workout</Text>                                    
+                        { 
+                            currentVideoList.length > 0 &&
+                            currentVideoList.map(( item, index ) => {
+                            return (
+                                <TouchableOpacity key={index} onPress={() => navigation.navigate('previewVideo', {
+                                                    items: item
+                                                })} style={styles.listCon}>
+                                    <View style={styles.listConLeft}>
+                                        <ImageBackground style={{ width: '100%', height: '100%', zIndex: -1 }} 
+                                        source={{ uri: 'https://quantumleaptech.org/getFit'+item.image  }}>
+                                            <View style={styles.imageOverlay}>
+                                                <Text style={styles.imageOverlayText}>{ item.avg_min }</Text>
+                                                {/* <Text style={styles.imageOverlayText}>Min</Text> */}
+                                            </View>
+                                        </ImageBackground>
+                                    </View>
+                                    <View style={styles.listConRight}>
+                                        <Text style={styles.listConRightH1}>{ item.name } </Text>
+                                        <Text style={styles.listConRightH2}>{ item.intensity }  { item.equipment }  { item.level }</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            )
+                            }) 
+                        } 
+                    </ScrollView>
+                </View> 
+            } 
+            </SafeAreaView>
     ) 
 }
 

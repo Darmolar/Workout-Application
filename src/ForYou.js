@@ -79,7 +79,7 @@ export default class ForYouScreen extends Component{
                             this.setState({...this.state, loading: false}); 
                             return true;
                         }else{  
-                            SnackBar.show(json.message, { duration: 4000 });
+                            SnackBar.show(json.message, { duration: 1000 });
                             this.setState({...this.state, loading: false}); 
                         }
                     }) 
@@ -95,7 +95,7 @@ export default class ForYouScreen extends Component{
 
     hardRefresh = async () => {
         await AsyncStorage.removeItem('workOuts'); 
-        // SnackBar.show('Making the world happier', { duration: 4000 })
+        // SnackBar.show('Making the world happier', { duration: 1000 })
         this.setState({...this.state,  refreshing: true});
         fetch(`https://quantumleaptech.org/getFit/api/v1/workout`,{
                 headers:{
@@ -114,12 +114,12 @@ export default class ForYouScreen extends Component{
                 // this.setState({...this.state, loading: false}); 
                 if(json.status === true && json.data.data.length > 0){ 
                     // console.log(json) ;
-                    SnackBar.show('Fetched successfully', { duration: 4000  }) 
+                    SnackBar.show('Fetched successfully', { duration: 1000  }) 
                     await AsyncStorage.setItem('workOuts', JSON.stringify(json.data)); 
                     this.setState({...this.state, workOuts: json.data, refreshing: false}); 
                     return true;
                 }else{
-                    SnackBar.show(json.message, { duration: 4000  }) 
+                    SnackBar.show(json.message, { duration: 1000  }) 
                     this.setState({...this.state, refreshing: false }); 
                 }
             }) 
@@ -129,19 +129,26 @@ export default class ForYouScreen extends Component{
             });
     }
 
-    saveWorkOut = async (id) => {
+    saveWorkOut = async (id) => { 
         var savedWorkouts = await AsyncStorage.getItem('savedWorkouts');
+        SnackBar.dismiss();
         if(savedWorkouts !== null){
             var alreadySavedWorkOut = JSON.parse(savedWorkouts);
-            alreadySavedWorkOut[id.id] = id;
-            // console.log(alreadySavedWorkOut)
-            await AsyncStorage.setItem('savedWorkouts', JSON.stringify(alreadySavedWorkOut));
-            SnackBar.show('Saved successfully', { duration: 4000 }) 
+            // var myId = id.id
+            if(alreadySavedWorkOut.myId){ 
+                delete alreadySavedWorkOut.myId; 
+                await AsyncStorage.setItem('savedWorkouts', JSON.stringify(alreadySavedWorkOut));
+                SnackBar.show('Removed successfully', { duration: 1000 }) 
+            }else{ 
+                alreadySavedWorkOut.myId = id; 
+                await AsyncStorage.setItem('savedWorkouts', JSON.stringify(alreadySavedWorkOut));
+                SnackBar.show('Saved successfully', { duration: 1000 }) 
+            }
         }else{
             var newSavedWorkOut = new Object();
-            newSavedWorkOut[id.id] = id;
+            newSavedWorkOut[id.id] = id; 
             await AsyncStorage.setItem('savedWorkouts', JSON.stringify(newSavedWorkOut));
-            SnackBar.show('Saved successfully', { duration: 4000 }) 
+            SnackBar.show('Saved successfully', { duration: 1000 }) 
         }
         return true;
     }
